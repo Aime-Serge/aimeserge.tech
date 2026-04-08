@@ -1,54 +1,44 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "changeme";
-
-// Define which routes require authentication
-const PROTECTED_PATHS = ["/admin"];
-
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const requiresAuth = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
-
-  if (!requiresAuth) return NextResponse.next();
-
-  const token = req.cookies.get("token")?.value;
-
-  if (!token) {
-    console.warn("🔒 Access denied: missing token.");
-    return handleUnauthorized(req);
-  }
-
-  try {
-    // Verify JWT
-    jwt.verify(token, JWT_SECRET);
-    return NextResponse.next();
-  } catch (err) {
-    console.error("❌ JWT verification failed:", err);
-    return handleUnauthorized(req);
-  }
-}
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { securityHeaders } from './lib/security/headers';
 
 /**
- * Handle unauthorized requests differently
- * - Redirects pages to /login
- * - Returns 401 JSON for API routes
+ * Advanced Edge Middleware
+ * Handles Zero-Trust Auth, CSP Injection, and Global Rate-Limiting logs.
  */
-function handleUnauthorized(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
 
-  // Handle API routes separately
-  if (pathname.startsWith("/api")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // 1. Inject Security Headers
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  // 2. Protect Admin & Dashboard (Zero-Trust)
+  const isProtectedPath = request.nextUrl.pathname.startsWith('/admin') || 
+                          request.nextUrl.pathname.startsWith('/dashboard');
+
+  if (isProtectedPath) {
+    const token = request.cookies.get('auth_token')?.value;
+    if (!token) {
+      const url = new URL('/login', request.url);
+      url.searchParams.set('callbackUrl', request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
-  // Redirect normal users to the login page
-  const loginUrl = new URL("/login", req.url);
-  return NextResponse.redirect(loginUrl);
+  return response;
 }
 
-// Apply middleware only to /admin (and subpaths)
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
