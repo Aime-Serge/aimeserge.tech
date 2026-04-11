@@ -1,11 +1,11 @@
 import { getProjects } from "@/actions/portfolio-actions";
 import Link from "next/link";
-import { ExternalLink, FileText, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/security/headers";
+import { ExternalLink, FileText, ChevronRight, Eye, Heart, Share2, Rocket } from "lucide-react";
+import SecurityAudit from "@/components/features/SecurityAudit";
 
 export const metadata = {
-  title: "Projects | Aime Serge",
-  description: "Explore my engineering projects in Cloud, Security, and Full-Stack Development.",
+  title: "Engineering Feed | Aime Serge",
+  description: "Explore my engineering projects in Cloud, Security, and Full-Stack Development presented as a dynamic feed.",
 };
 
 export default async function ProjectsPage() {
@@ -14,87 +14,140 @@ export default async function ProjectsPage() {
   return (
     <div className="container mx-auto px-6 py-12 lg:py-20">
       <div className="mb-16">
+        <div className="flex items-center gap-2 text-cyan-500 font-mono text-xs uppercase tracking-[0.3em] mb-4">
+          <Rocket className="h-3.5 w-3.5 animate-bounce" />
+          Deployment_Logs_Active
+        </div>
         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
           Engineered <span className="text-cyan-500">Solutions</span>
         </h1>
         <p className="mt-4 max-w-2xl text-slate-400 text-lg">
-          A collection of case studies, prototypes, and production applications built with a focus on scalability and security.
+          A real-time feed of architectural blueprints, production systems, and security-hardened applications.
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            className="group relative flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-sm transition-all duration-300 hover:border-cyan-500/50 hover:bg-slate-900/60"
-          >
-            {/* Top Bar */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-mono font-medium uppercase tracking-widest text-cyan-500/70">
-                {project.createdAt}
-              </span>
-              <div className="flex gap-2">
-                {project.url && (
-                  <a
-                    href={project.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-cyan-400"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                )}
-                {project.pdfUrl && (
-                  <a
-                    href={project.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-emerald-400"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </a>
-                )}
+      <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
+        {/* Left Column: Projects Feed */}
+        <div className="space-y-8">
+          {projects.map((project) => (
+            <article
+              key={project.id}
+              className="group relative flex flex-col rounded-2xl border border-slate-800 bg-slate-950 p-1 transition-all hover:border-cyan-500/50"
+            >
+              <div className="bg-slate-900/40 rounded-xl p-6 md:p-8 backdrop-blur-sm">
+                <div className="flex flex-col gap-6">
+                  {/* Header Meta */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest">
+                      <span className="px-2 py-0.5 rounded border border-cyan-500/30 text-cyan-400 bg-cyan-500/5">
+                        {project.category}
+                      </span>
+                      <span className="text-slate-500">{project.createdAt}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {project.url && (
+                        <a
+                          href={project.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-cyan-400"
+                          title="Live Demo"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                      {project.pdfUrl && (
+                        <a
+                          href={project.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-emerald-400"
+                          title="Documentation"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-4">
+                    <Link href={`/projects/${project.slug}`}>
+                      <h2 className="text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors md:text-3xl cursor-pointer">
+                        {project.title}
+                      </h2>
+                    </Link>
+                    <p className="max-w-4xl text-slate-400 leading-relaxed text-base md:text-lg">
+                      {project.tagline}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {project.tools.map(tool => (
+                        <span key={tool} className="text-xs font-mono text-cyan-500/60">
+                          #{tool.replace(/\s+/g, '')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Interaction Bar */}
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-800/50">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
+                        <Eye className="h-4 w-4" />
+                        {project.views}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
+                        <Heart className="h-4 w-4" />
+                        {project.likes}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 cursor-pointer hover:text-cyan-400 transition-colors">
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </div>
+                    </div>
+                    
+                    <Link
+                      href={`/projects/${project.slug}`}
+                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white hover:text-cyan-400 transition-colors"
+                    >
+                      Audit Case Study
+                      <ChevronRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
               </div>
-            </div>
+              
+              {/* Subtle background glow */}
+              <div className="absolute -left-20 -top-20 -z-10 h-64 w-64 rounded-full bg-cyan-500/5 blur-3xl opacity-0 transition-opacity group-hover:opacity-100" />
+            </article>
+          ))}
+        </div>
 
-            <h3 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">
-              {project.title}
-            </h3>
-            <p className="mt-2 text-sm text-slate-400 line-clamp-2">
-              {project.tagline}
-            </p>
-
-            {/* Tools/Stack */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              {project.tools.slice(0, 3).map((tool) => (
-                <span
-                  key={tool}
-                  className="rounded-md bg-slate-800/50 px-2 py-1 text-[10px] font-mono text-slate-300 border border-slate-700/50"
-                >
-                  {tool}
-                </span>
-              ))}
-              {project.tools.length > 3 && (
-                <span className="text-[10px] font-mono text-slate-500 flex items-center">
-                  +{project.tools.length - 3} more
-                </span>
-              )}
-            </div>
-
-            <div className="mt-auto pt-8">
-              <Link
-                href={`/projects/${project.slug}`}
-                className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white hover:text-cyan-400 transition-colors"
-              >
-                View Case Study
-                <ChevronRight className="h-3 w-3" />
-              </Link>
-            </div>
-            
-            {/* Decorative Glow */}
-            <div className="absolute -inset-0.5 -z-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 opacity-0 blur-xl transition duration-500 group-hover:opacity-40" />
+        {/* Right Column: Sidebar */}
+        <aside className="space-y-8">
+          <SecurityAudit />
+          
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-sm">
+             <h4 className="text-sm font-bold text-white uppercase tracking-widest font-mono mb-6 border-b border-slate-800 pb-2">Technology Focus</h4>
+             <div className="flex flex-wrap gap-2">
+                {[
+                  "Node.js", "TypeScript", "GCP", "Docker", "Vertex AI", 
+                  "React", "Next.js", "Python", "Kubernetes", "Zero-Trust"
+                ].map(tech => (
+                  <span key={tech} className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-[10px] font-mono text-slate-400 hover:border-cyan-500/50 hover:text-cyan-400 transition-all cursor-pointer">
+                    {tech}
+                  </span>
+                ))}
+             </div>
+             
+             <div className="mt-8 p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+                <p className="text-[10px] font-mono text-cyan-500 leading-relaxed uppercase">
+                  All projects are verified for security compliance and high-availability architecture.
+                </p>
+             </div>
           </div>
-        ))}
+        </aside>
       </div>
     </div>
   );

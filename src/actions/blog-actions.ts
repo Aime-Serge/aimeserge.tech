@@ -1,33 +1,83 @@
 "use server";
 
-export interface Blog {
-  id: string;
-  title: string;
-  excerpt: string;
-  category: "Security" | "Cloud" | "AI";
-  createdAt: string;
-  readTime: string;
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { unstable_cache } from 'next/cache';
+import { type Broadcast, fallbackBroadcasts } from "@/types/blog";
+
+export async function getBroadcasts(): Promise<Broadcast[]> {
+  return unstable_cache(
+    async () => {
+      const supabase = createServerSupabaseClient();
+      
+      try {
+        const { data, error } = await supabase
+          .from('broadcasts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          return fallbackBroadcasts;
+        }
+
+        return data.map((b) => ({
+          id: b.id,
+          title: b.title,
+          content: b.content,
+          excerpt: b.excerpt,
+          category: b.category,
+          tags: b.tags || [],
+          createdAt: b.created_at,
+          readTime: b.read_time,
+          images: b.images || [],
+          videoUrl: b.video_url,
+          engagement: {
+            views: b.views || 0,
+            shares: b.shares || 0
+          }
+        }));
+      } catch (e) {
+        return fallbackBroadcasts;
+      }
+    },
+    ['broadcasts-feed'],
+    { tags: ['broadcasts'], revalidate: 60 }
+  )();
 }
 
-const mockBlogs: Blog[] = [
-  {
-    id: "blog-1",
-    title: "Hardening Next.js Applications: A Zero-Trust Approach",
-    excerpt: "Exploring the implementation of strict CSP, Subresource Integrity, and Server-Side validation in modern React frameworks.",
-    category: "Security",
-    createdAt: "2024-03-15",
-    readTime: "8 min read"
-  },
-  {
-    id: "blog-2",
-    title: "Orchestrating AI Agents with Vercel Edge Functions",
-    excerpt: "How to deploy high-concurrency LLM pipelines using streaming responses and regional isolation for minimal latency.",
-    category: "Cloud",
-    createdAt: "2024-02-28",
-    readTime: "6 min read"
-  }
-];
+export async function getBroadcastById(id: string): Promise<Broadcast | null> {
+  return unstable_cache(
+    async () => {
+      const supabase = createServerSupabaseClient();
+      try {
+        const { data, error } = await supabase
+          .from('broadcasts')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-export async function getBlogs() {
-  return mockBlogs;
+        if (error || !data) return fallbackBroadcasts.find(b => b.id === id) || null;
+
+        return {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt,
+          category: data.category,
+          tags: data.tags || [],
+          createdAt: data.created_at,
+          readTime: data.read_time,
+          images: data.images || [],
+          videoUrl: data.video_url,
+          engagement: {
+            views: data.views || 0,
+            shares: data.shares || 0
+          }
+        };
+      } catch (e) {
+        return fallbackBroadcasts.find(b => b.id === id) || null;
+      }
+    },
+    [`broadcast-${id}`],
+    { tags: [`broadcast-${id}`], revalidate: 60 }
+  )();
 }
