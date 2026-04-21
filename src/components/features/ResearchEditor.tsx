@@ -1,23 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { Microscope, Save, X, Upload, FileText, Database } from "lucide-react";
+import { Microscope, Save, X, Upload, Database } from "lucide-react";
 import { upsertContent, uploadArtifact } from "@/actions/admin-actions";
+import { syncResearchToKnowledge } from "@/actions/research-actions";
+import { type ResearchPaper } from "@/types/research";
 import { toast } from "react-hot-toast";
 
-export default function ResearchEditor({ initialData, onClose }: { initialData?: any; onClose: () => void }) {
+interface ResearchFormData {
+  id?: string;
+  title: string;
+  slug: string;
+  abstract: string;
+  pdf_url: string;
+  tags: string[];
+}
+
+interface ResearchEditorProps {
+  initialData?: Partial<ResearchFormData>;
+  onClose: () => void;
+}
+
+export default function ResearchEditor({ initialData, onClose }: ResearchEditorProps) {
   const [isPending, setIsPending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ResearchFormData>({
     id: initialData?.id || undefined,
     title: initialData?.title || "",
     slug: initialData?.slug || "",
     abstract: initialData?.abstract || "",
     pdf_url: initialData?.pdf_url || "",
-    tags: initialData?.tags || [],
+    tags: Array.isArray(initialData?.tags) ? initialData.tags : [],
   });
-
-  const [newTag, setNewTag] = useState("");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,8 +49,28 @@ export default function ResearchEditor({ initialData, onClose }: { initialData?:
     e.preventDefault();
     setIsPending(true);
     const result = await upsertContent('research', formData, '/research');
+    
     if (result.success) {
       toast.success("Research artifact published.");
+      
+      // Background Sync to Digital Twin
+      toast.promise(
+        syncResearchToKnowledge({
+          ...formData,
+          id: result.data.id,
+          createdAt: new Date().toISOString(),
+          views: 0,
+          downloads: 0,
+          pdfUrl: formData.pdf_url,
+          tags: formData.tags
+        } as ResearchPaper),
+        {
+          loading: 'Analyzing artifact architecture...',
+          success: 'Knowledge Base Synchronized.',
+          error: 'Sync incomplete (Local node only).'
+        }
+      );
+
       onClose();
     }
     setIsPending(false);
