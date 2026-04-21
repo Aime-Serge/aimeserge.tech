@@ -1,20 +1,22 @@
 import { openai } from "@ai-sdk/openai";
-import { transcribeSpeech } from "ai";
+import { experimental_transcribe as transcribe } from "ai";
 
 export const runtime = "edge";
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const audioBlob = formData.get("audio") as Blob;
+    const audioBlob = formData.get("audio");
 
-    if (!audioBlob) {
+    if (!(audioBlob instanceof Blob)) {
       return new Response("Audio blob is required", { status: 400 });
     }
 
-    const { text } = await transcribeSpeech({
-      model: openai.speech("whisper-1"),
-      audio: audioBlob,
+    const audioBuffer = await audioBlob.arrayBuffer();
+
+    const { text } = await transcribe({
+      model: openai.transcription("whisper-1"),
+      audio: new Uint8Array(audioBuffer),
     });
 
     return new Response(JSON.stringify({ text }), {

@@ -103,7 +103,7 @@ export default async function ResearchDetailPage({ params }: Props) {
               <div className="prose prose-invert max-w-none">
                 <h3 className="text-emerald-400 font-mono uppercase tracking-widest text-sm mb-4">Executive_Abstract</h3>
                 <p className="text-xl text-slate-300 leading-relaxed font-light italic border-l-2 border-emerald-500/30 pl-6 py-2">
-                  "{paper.abstract}"
+                  &quot;{paper.abstract}&quot;
                 </p>
               </div>
 

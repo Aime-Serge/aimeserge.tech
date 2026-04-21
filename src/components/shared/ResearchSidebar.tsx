@@ -1,6 +1,6 @@
 "use client";
 
-import { Microscope, Activity, Shield, Globe, Server } from "lucide-react";
+import { Activity } from "lucide-react";
 import SecurityAudit from "@/components/features/SecurityAudit";
 import { type ResearchPaper } from "@/types/research";
 

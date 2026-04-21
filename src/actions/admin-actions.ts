@@ -12,7 +12,7 @@ import { cookies, headers } from "next/headers";
 
 export async function recordSecurityEvent(
   event_type: string, 
-  user_email: string | null, 
+  user_email: string | null | undefined, 
   severity: 'INFO' | 'WARN' | 'CRITICAL' = 'INFO',
   metadata: object = {}
 ) {
@@ -204,4 +204,3 @@ export async function getSecurityLogs() {
     return { success: false, error: getErrorMessage(err) };
   }
 }
-

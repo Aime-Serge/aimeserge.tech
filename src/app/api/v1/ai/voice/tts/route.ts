@@ -1,11 +1,14 @@
 import { openai } from "@ai-sdk/openai";
-import { generateSpeech } from "ai";
+import { experimental_generateSpeech as generateSpeech } from "ai";
 
 export const runtime = "edge";
 
 export async function POST(req: Request) {
   try {
-    const { text, voice = "alloy" } = await req.json();
+    const { text, voice = "alloy" } = (await req.json()) as {
+      text?: string;
+      voice?: string;
+    };
 
     if (!text) {
       return new Response("Text is required", { status: 400 });
@@ -14,12 +17,17 @@ export async function POST(req: Request) {
     const speech = await generateSpeech({
       model: openai.speech("tts-1"),
       voice,
-      value: text,
+      text,
     });
 
-    return new Response(speech, {
+    const audioBytes = Uint8Array.from(speech.audio.uint8Array);
+    const audioBlob = new Blob([audioBytes], {
+      type: speech.audio.mediaType || "audio/mpeg",
+    });
+
+    return new Response(audioBlob, {
       headers: {
-        "Content-Type": "audio/mpeg",
+        "Content-Type": speech.audio.mediaType || "audio/mpeg",
       },
     });
   } catch (error) {

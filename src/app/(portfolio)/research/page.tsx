@@ -1,4 +1,3 @@
-import { Microscope, Eye, Download } from "lucide-react";
 import { getResearch } from "@/actions/research-actions";
 import ResearchFeed from "@/components/features/ResearchFeed";
 import ResearchSidebar from "@/components/shared/ResearchSidebar";

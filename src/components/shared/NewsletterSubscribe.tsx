@@ -21,7 +21,7 @@ export default function NewsletterSubscribe() {
       toast.success(result.message);
       setIsSubscribed(true);
     } else {
-      toast.error(result.error || result.message);
+      toast.error(result.message);
     }
     setIsPending(false);
   };
