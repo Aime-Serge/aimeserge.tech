@@ -1,8 +1,9 @@
 "use client";
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport, getToolName, isTextUIPart, isToolUIPart, type UIMessage } from 'ai';
 import { Bot, X, Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { type FormEvent, useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/security/headers';
 import { useRouter } from 'next/navigation';
 
@@ -44,6 +45,71 @@ interface SpeechRecognition extends EventTarget {
 interface WindowWithSpeech extends Window {
   SpeechRecognition?: new () => SpeechRecognition;
   webkitSpeechRecognition?: new () => SpeechRecognition;
+  webkitAudioContext?: typeof AudioContext;
+}
+
+interface LegacyToolCall {
+  toolName?: string;
+  args?: {
+    path?: string;
+  };
+}
+
+type ChatMessage = UIMessage & {
+  content?: string;
+  toolCalls?: LegacyToolCall[];
+};
+
+function getMessageText(message: ChatMessage): string {
+  if (typeof message.content === 'string') {
+    return message.content;
+  }
+
+  if (!Array.isArray(message.parts)) {
+    return '';
+  }
+
+  return message.parts
+    .filter(isTextUIPart)
+    .map((part) => part.text)
+    .join('');
+}
+
+function readPathFromInput(input: unknown): string | null {
+  if (typeof input !== 'object' || input === null) {
+    return null;
+  }
+
+  const candidatePath = (input as Record<string, unknown>).path;
+  return typeof candidatePath === 'string' ? candidatePath : null;
+}
+
+function getNavigationPath(message: ChatMessage): string | null {
+  const legacyPath = message.toolCalls?.find((toolCall) => toolCall.toolName === 'navigateTo')?.args?.path;
+  if (legacyPath) {
+    return legacyPath;
+  }
+
+  if (!Array.isArray(message.parts)) {
+    return null;
+  }
+
+  for (const part of message.parts) {
+    if (!isToolUIPart(part)) {
+      continue;
+    }
+
+    if (getToolName(part) !== 'navigateTo') {
+      continue;
+    }
+
+    const extractedPath = readPathFromInput(part.input);
+    if (extractedPath) {
+      return extractedPath;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -52,7 +118,7 @@ interface WindowWithSpeech extends Window {
  */
 function VoiceVisualizer({ isActive, isProcessing }: { isActive: boolean; isProcessing?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>(null);
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isActive || !canvasRef.current) return;
@@ -63,18 +129,22 @@ function VoiceVisualizer({ isActive, isProcessing }: { isActive: boolean; isProc
 
     let audioContext: AudioContext;
     let analyser: AnalyserNode;
-    let dataArray: Uint8Array;
+    let dataArray: Uint8Array<ArrayBuffer>;
 
     const startAudio = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as WindowWithSpeech).webkitAudioContext;
+        if (!AudioContextClass) {
+          return;
+        }
+        audioContext = new AudioContextClass();
         analyser = audioContext.createAnalyser();
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(analyser);
         analyser.fftSize = 64;
         const bufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
+        dataArray = new Uint8Array(bufferLength) as Uint8Array<ArrayBuffer>;
 
         const draw = () => {
           animationRef.current = requestAnimationFrame(draw);
@@ -115,37 +185,124 @@ function VoiceVisualizer({ isActive, isProcessing }: { isActive: boolean; isProc
   return <canvas ref={canvasRef} width="100" height="30" className={cn("opacity-80 transition-opacity", isProcessing ? "animate-pulse" : "")} />;
 }
 
+interface ConversationWindow {
+  id: string;
+  messages: UIMessage[];
+  title: string;
+  timestamp: number;
+}
+
 export default function AIChat() {
+  const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(true);
   const [lastFollowUps, setLastFollowUps] = useState<string[]>([]);
+  const [input, setInput] = useState('');
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [conversationHistory, setConversationHistory] = useState<ConversationWindow[]>([]);
+  const [currentWindowId, setCurrentWindowId] = useState<string>('main');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-  
-  const { messages, input, setInputValue, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
-    api: '/api/v1/ai/chat',
-    maxSteps: 5,
-    body: {
-      pathname: typeof window !== 'undefined' ? window.location.pathname : '/',
-    },
-    onFinish: (message) => {
-      if (isSpeaking && typeof window !== 'undefined' && 'speechSynthesis' in window && message.content) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(message.content);
-        window.speechSynthesis.speak(utterance);
-      }
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const chatRef = useRef<HTMLDivElement>(null);
 
-      if (message.toolCalls) {
-        for (const toolCall of message.toolCalls) {
-          if (toolCall.toolName === 'navigateTo') {
-            const { path } = toolCall.args as { path: string };
-            router.push(path);
-          }
+  // Focus Trap & Keyboard Nav
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+      
+      // Basic focus trap
+      if (e.key === 'Tab') {
+        const focusable = chatRef.current?.querySelectorAll('button, input, [tabindex="0"]');
+        if (!focusable) return;
+        const first = focusable[0] as HTMLElement;
+        const last = focusable[focusable.length - 1] as HTMLElement;
+
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
         }
       }
+    };
 
-      const content = message.content.toLowerCase();
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  // Audio Feedback Cues
+  const playCue = (type: 'start' | 'stop' | 'success') => {
+    const frequencies = { start: 440, stop: 330, success: 550 };
+    const AudioContextClass = window.AudioContext || (window as unknown as WindowWithSpeech).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.frequency.setValueAtTime(frequencies[type], ctx.currentTime);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
+  };
+
+  // Fix hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const playTTS = async (text: string) => {
+    if (!isSpeaking) return;
+    try {
+      const response = await fetch('/api/v1/ai/voice/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok) throw new Error('TTS failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+    } catch (err) {
+      console.error('TTS Playback error:', err);
+    }
+  };
+
+  const transportRef = useRef(
+    new DefaultChatTransport({
+      api: '/api/v1/ai/chat',
+      body: () => ({
+        pathname: typeof window !== 'undefined' ? window.location.pathname : '/',
+      }),
+    }),
+  );
+  const router = useRouter();
+  
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: transportRef.current,
+    onFinish: ({ message }) => {
+      const normalizedMessage = message as ChatMessage;
+      const messageText = getMessageText(normalizedMessage);
+      
+      if (isSpeaking && messageText) {
+        playTTS(messageText);
+      }
+
+      const navigationPath = getNavigationPath(normalizedMessage);
+      if (navigationPath) {
+        router.push(navigationPath);
+      }
+
+      const content = messageText.toLowerCase();
       let foundFollowUps: string[] = [];
       if (content.includes("project")) foundFollowUps = FOLLOW_UP_SUGGESTIONS.projects;
       else if (content.includes("security") || content.includes("protect")) foundFollowUps = FOLLOW_UP_SUGGESTIONS.security;
@@ -155,92 +312,185 @@ export default function AIChat() {
       setLastFollowUps(foundFollowUps.slice(0, 3));
     }
   });
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  // Get current conversation window
+  const currentWindow = conversationHistory.find(w => w.id === currentWindowId) || 
+    { id: 'main', messages: messages, title: 'Main Chat', timestamp: Date.now() };
+  
+  const canGoBack = conversationHistory.length > 0 && currentWindowId !== 'main';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const clearChat = () => {
+    if (messages.length > 0 && currentWindowId === 'main') {
+      const newWindow: ConversationWindow = {
+        id: `window-${Date.now()}`,
+        messages: messages,
+        title: messages[0] ? getMessageText(messages[0] as ChatMessage).substring(0, 40) + '...' : 'Untitled Chat',
+        timestamp: Date.now(),
+      };
+      setConversationHistory(prev => [newWindow, ...prev].slice(0, 10));
+    }
     setMessages([]);
+    setInput('');
     setLastFollowUps([]);
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+  };
+
+  const goBack = () => {
+    if (conversationHistory.length > 0) {
+      const previousWindow = conversationHistory[0];
+      setCurrentWindowId(previousWindow.id);
+      setMessages(previousWindow.messages);
+      setInput('');
+      setLastFollowUps([]);
     }
   };
 
-  const toggleListening = useCallback(() => {
-    if (typeof window === 'undefined') return;
+  const switchToMainChat = () => {
+    setCurrentWindowId('main');
+    setInput('');
+    setLastFollowUps([]);
+  };
 
-    const win = window as unknown as WindowWithSpeech;
-    const SpeechRecognitionClass = win.SpeechRecognition || win.webkitSpeechRecognition;
-    
-    if (!SpeechRecognitionClass) {
-      alert("Speech recognition not supported in this browser.");
-      return;
-    }
-
+  const toggleListening = useCallback(async () => {
     if (isListening) {
+      mediaRecorderRef.current?.stop();
       setIsListening(false);
+      playCue('stop');
       return;
     }
 
-    const recognition = new SpeechRecognitionClass();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      setInputValue(transcript);
-    };
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
 
-    recognition.start();
-  }, [isListening, setInputValue]);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob);
+
+        try {
+          setInput('Transcribing...');
+          const response = await fetch('/api/v1/ai/voice/stt', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await response.json();
+          if (data.text) {
+            setVoiceTranscript(data.text);
+            setInput(data.text);
+            sendMessage({ text: data.text });
+            playCue('success');
+            setTimeout(() => setVoiceTranscript(''), 3000);
+          }
+        } catch (err) {
+          console.error('STT failed:', err);
+          setInput('Transcription failed.');
+        }
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+      setVoiceTranscript('');
+      playCue('start');
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      alert('Microphone access denied. Please check your settings.');
+    }
+  }, [isListening, sendMessage]);
+
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
+    setInput(suggestion);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedInput = input.trim();
+    if (!trimmedInput || isLoading) {
+      console.warn('⚠️ Cannot submit: input empty or already loading');
+      return;
+    }
+
+    console.log('🚀 Sending message:', trimmedInput);
+    
+    // Send message - ensure it goes through properly
+    sendMessage({ text: trimmedInput });
+    setInput('');
+    
+    // Scroll to bottom after sending
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        aria-label="Open AI Assistant"
-        className={cn(
-          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition-all duration-300 hover:bg-cyan-500 hover:shadow-[0_0_20px_rgba(8,145,178,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950",
-          isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100"
-        )}
-      >
-        <Bot className="h-6 w-6" />
-      </button>
+      {isMounted && (
+        <>
+          <button
+            onClick={() => setIsOpen(true)}
+            aria-label="Open AI Assistant"
+            className={cn(
+              "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition-all duration-300 hover:bg-cyan-500 hover:shadow-[0_0_20px_rgba(8,145,178,0.5)] focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950",
+              isOpen ? "scale-0 opacity-0 pointer-events-none" : "scale-100 opacity-100"
+            )}
+          >
+            <Bot className="h-6 w-6" />
+          </button>
 
-      <div
-        role="dialog"
-        aria-label="AI Assistant Chat"
-        className={cn(
-          "fixed bottom-6 right-6 z-50 flex h-[550px] w-[350px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:w-[400px]",
-          isOpen
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none translate-y-8 opacity-0"
-        )}
-      >
+          <div
+            role="dialog"
+            ref={chatRef}
+            aria-label="AI Assistant Chat"
+            className={cn(
+              "fixed bottom-6 right-6 z-50 flex h-[550px] w-[350px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/95 shadow-2xl backdrop-blur-xl transition-all duration-300 sm:w-[400px]",
+              isOpen
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-8 opacity-0"
+            )}
+          >
         <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-4 py-3">
           <div className="flex items-center gap-3">
+            {canGoBack && (
+              <button
+                onClick={goBack}
+                className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-cyan-400"
+                title="Back to Previous Chat"
+              >
+                <span className="text-lg">←</span>
+              </button>
+            )}
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400">
               <Bot className="h-4 w-4" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Digital Twin Node</h3>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-white">{currentWindow.id === 'main' ? 'Digital Twin Node' : currentWindow.title}</h3>
               <p className="text-[10px] text-slate-500 font-mono">ENCRYPTED_SESSION :: SECURE</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <button
+              onClick={() => router.push('/')}
+              className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-emerald-400"
+              title="Return to Home"
+            >
+              <span className="text-lg">⌂</span>
+            </button>
+            <button
               onClick={clearChat}
-              className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-red-400"
-              title="Clear Conversation"
+              className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-amber-400"
+              title="Save & Start New Chat"
             >
               <Bot className="h-4 w-4 rotate-180" />
             </button>
@@ -254,6 +504,7 @@ export default function AIChat() {
             <button
               onClick={() => setIsOpen(false)}
               className="rounded-full p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+              title="Minimize Chat"
             >
               <X className="h-4 w-4" />
             </button>
@@ -264,8 +515,15 @@ export default function AIChat() {
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
               <Bot className="mb-3 h-10 w-10 opacity-30" />
-              <p className="text-sm mb-6">Aime Serge's Digital Twin.<br/>Secure by design. AI-powered responses.</p>
-              
+              <p className="text-sm mb-6">Aime Serge&apos;s Digital Twin.<br/>Secure by design. AI-powered responses.</p>
+              {currentWindowId !== 'main' && (
+                <button
+                  onClick={switchToMainChat}
+                  className="mb-6 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs text-cyan-400 transition hover:bg-cyan-500/20 hover:border-cyan-500/50"
+                >
+                  ← Return to Main Chat
+                </button>
+              )}
               <div className="grid grid-cols-1 gap-2 w-full max-w-[280px]">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -279,33 +537,37 @@ export default function AIChat() {
               </div>
             </div>
           )}
-          {messages.map((m) => (
+          {messages.map((m) => {
+            const normalizedMessage = m as ChatMessage;
+            const messageText = getMessageText(normalizedMessage);
+            const navigationPath = getNavigationPath(normalizedMessage);
+
+            return (
             <div
-              key={m.id}
+              key={normalizedMessage.id}
               className={cn(
-                "mb-4 flex w-full max-w-[85%]",
-                m.role === 'user' ? "ml-auto justify-end" : "mr-auto justify-start"
+                "mb-4 flex w-full max-w-[85%] animate-in fade-in slide-in-from-bottom-2",
+                normalizedMessage.role === 'user' ? "ml-auto justify-end" : "mr-auto justify-start"
               )}
             >
               <div
                 className={cn(
                   "rounded-2xl px-4 py-2.5 text-sm shadow-sm",
-                  m.role === 'user'
+                  normalizedMessage.role === 'user'
                     ? "bg-cyan-600 text-white rounded-br-sm"
                     : "bg-slate-800 text-slate-200 rounded-bl-sm border border-slate-700"
                 )}
               >
-                {m.content}
-                {m.toolCalls?.map((tc) => (
-                  tc.toolName === 'navigateTo' && (
-                    <div key={tc.toolCallId} className="mt-2 border-t border-slate-700 pt-2 text-[10px] italic text-cyan-400">
-                      Executing Navigation: { (tc.args as any).path }
-                    </div>
-                  )
-                ))}
+                {messageText}
+                {navigationPath && (
+                  <div className="mt-2 border-t border-slate-700 pt-2 text-[10px] italic text-cyan-400">
+                    Executing Navigation: {navigationPath}
+                  </div>
+                )}
               </div>
             </div>
-          ))}
+          );
+          })}
           
           {!isLoading && lastFollowUps.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-2 justify-start animate-in fade-in slide-in-from-bottom-2">
@@ -322,11 +584,12 @@ export default function AIChat() {
           )}
 
           {isLoading && (
-            <div className="mb-4 flex w-full max-w-[85%] justify-start">
-              <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-700 bg-slate-800 px-4 py-3">
+            <div className="mb-4 flex w-full max-w-[85%] justify-start animate-in fade-in">
+              <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-cyan-500/30 bg-slate-800/50 px-4 py-3">
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400 [animation-delay:-0.3s]"></span>
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400 [animation-delay:-0.15s]"></span>
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400"></span>
+                <span className="text-xs text-cyan-400 ml-2">Thinking...</span>
               </div>
             </div>
           )}
@@ -339,7 +602,49 @@ export default function AIChat() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="border-t border-slate-800 bg-slate-900/80 p-3">
+        <form onSubmit={handleSubmit} className="border-t border-slate-800 bg-slate-900/80 p-3 space-y-2">
+          <div className="flex items-center justify-between text-[9px] text-slate-400">
+            {currentWindowId !== 'main' && (
+              <button
+                type="button"
+                onClick={switchToMainChat}
+                className="hover:text-cyan-400 transition"
+              >
+                ← Chat History
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="hover:text-emerald-400 transition ml-auto"
+            >
+              Home ⌂
+            </button>
+          </div>
+
+          {/* Voice Input Status Indicator */}
+          {isListening && (
+            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2">
+              <div className="flex gap-1">
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse [animation-delay:0.1s]"></span>
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse [animation-delay:0.2s]"></span>
+              </div>
+              <span className="text-[9px] text-red-400 flex-1">Listening... Recording voice input</span>
+            </div>
+          )}
+
+          {/* Voice Transcript Display */}
+          {voiceTranscript && !isListening && (
+            <div className="flex items-start gap-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-3 py-2">
+              <span className="text-cyan-400 text-lg">✓</span>
+              <div className="flex-1">
+                <span className="text-[9px] text-cyan-400 block">Voice captured & ready to send</span>
+                <span className="text-[9px] text-slate-300 line-clamp-2">&quot;{voiceTranscript}&quot;</span>
+              </div>
+            </div>
+          )}
+
           <div className="relative flex items-center gap-2">
             <button
               type="button"
@@ -357,9 +662,11 @@ export default function AIChat() {
             <div className="relative flex-1 flex items-center">
               <input
                 value={input}
-                onChange={handleInputChange}
+                onChange={(event) => setInput(event.target.value)}
                 placeholder={isListening ? "Listening..." : isLoading ? "Thinking..." : "Query the system..."}
                 className="w-full rounded-full border border-slate-700 bg-slate-800 py-2.5 pl-4 pr-12 text-sm text-white placeholder-slate-400 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                autoComplete="off"
+                disabled={isLoading}
               />
               {(isListening || isLoading) && (
                 <div className="absolute right-12 pr-2">
@@ -369,14 +676,27 @@ export default function AIChat() {
               <button
                 type="submit"
                 disabled={isLoading || !input?.trim()}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white transition hover:bg-cyan-500 disabled:opacity-50"
+                className={cn(
+                  "absolute right-1.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full transition",
+                  isLoading 
+                    ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                    : "bg-cyan-600 text-white hover:bg-cyan-500"
+                )}
+                title={isLoading ? "Waiting for response..." : "Send message"}
               >
                 <Send className="h-4 w-4" />
               </button>
             </div>
           </div>
+          {isLoading && (
+            <div className="text-[9px] text-cyan-400 text-center">
+              ↓ Receiving response from Digital Twin...
+            </div>
+          )}
         </form>
-      </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
