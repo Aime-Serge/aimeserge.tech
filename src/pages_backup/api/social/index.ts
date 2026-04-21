@@ -1,6 +1,40 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { SocialBlog } from "@/types/socialblog";
 
+interface LinkedInElement {
+  id: string;
+  author?: string;
+  created?: { time?: number };
+  lastModified?: { time?: number };
+  specificContent?: {
+    "com.linkedin.ugc.ShareContent"?: {
+      shareCommentary?: {
+        text?: string;
+      };
+    };
+  };
+}
+
+interface LinkedInResponse {
+  elements?: LinkedInElement[];
+}
+
+interface TwitterUserResponse {
+  data?: {
+    id?: string;
+  };
+}
+
+interface Tweet {
+  id: string;
+  text: string;
+  created_at: string;
+}
+
+interface TwitterTweetsResponse {
+  data?: Tweet[];
+}
+
 // Fetch LinkedIn posts
 async function fetchLinkedIn(): Promise<SocialBlog[]> {
   try {
@@ -19,11 +53,11 @@ async function fetchLinkedIn(): Promise<SocialBlog[]> {
       }
     );
 
-    const data = await response.json();
+    const data: LinkedInResponse = await response.json();
 
     if (!Array.isArray(data.elements)) return [];
 
-    return data.elements.map((el:any) => {
+    return data.elements.map((el) => {
       const message =
         el.specificContent?.["com.linkedin.ugc.ShareContent"]?.shareCommentary
           ?.text || "";
@@ -65,7 +99,7 @@ async function fetchTwitter(): Promise<SocialBlog[]> {
       `https://api.twitter.com/2/users/by/username/${username}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const userData = await userResp.json();
+    const userData: TwitterUserResponse = await userResp.json();
     const userId = userData?.data?.id;
     if (!userId) return [];
 
@@ -74,11 +108,11 @@ async function fetchTwitter(): Promise<SocialBlog[]> {
       `https://api.twitter.com/2/users/${userId}/tweets?max_results=5&tweet.fields=created_at`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    const tweetData = await tweetResp.json();
+    const tweetData: TwitterTweetsResponse = await tweetResp.json();
 
     if (!Array.isArray(tweetData.data)) return [];
 
-    return tweetData.data.map((tweet: any) => ({
+    return tweetData.data.map((tweet) => ({
       id: tweet.id,
       title: tweet.text.substring(0, 50) || "Tweet",
       content: tweet.text,
