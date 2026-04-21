@@ -1,24 +1,32 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters long"),
-  ADMIN_PASSWORD_HASH: z.string().min(10, "ADMIN_PASSWORD_HASH is required"),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  JWT_SECRET: z.string().min(32).optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
-export const validateEnv = () => {
+type Env = z.infer<typeof envSchema>;
+
+export const validateEnv = (): Partial<Env> => {
   const result = envSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
-    ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     NODE_ENV: process.env.NODE_ENV,
   });
 
   if (!result.success) {
-    console.error("❌ Invalid environment variables:", result.error.format());
-    throw new Error("Invalid environment variables");
+    console.warn("⚠️ Environment Variable Validation Warning:", result.error.format());
+    return {};
   }
 
   return result.data;
 };
 
-export const env = process.env.NODE_ENV === "test" ? ({} as any) : validateEnv();
+export const env: Partial<Env> = typeof window === "undefined" ? validateEnv() : {};

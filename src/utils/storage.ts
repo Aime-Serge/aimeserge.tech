@@ -1,42 +1,19 @@
-// src/utils/storage.ts
-import { ZodSchema } from "zod";
-
 /**
- * Save any serializable value to localStorage.
+ * Finalized Supabase Storage Utility for KZYQIADZETZPRWETYEBM Node
+ * Provides cloud-native asset resolution with intelligent fallbacks.
  */
-export const saveJSON = <T>(key: string, data: T): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    // Ignore if storage is not accessible
-  }
-};
 
-/**
- * Load JSON from localStorage and validate it with a Zod schema.
- * Returns the parsed & validated value, or null if invalid/missing.
- */
-export const loadJSON = <T>(key: string, schema: ZodSchema<T>): T | null => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
+const SUPABASE_URL = "https://kzyqiadzetzprwetyebm.supabase.co";
+const BUCKET_NAME = "artifacts";
 
-    const parsed = JSON.parse(raw);
-    const result = schema.safeParse(parsed);
+export function getAssetUrl(path: string | null | undefined): string {
+  if (!path) return "";
+  
+  // If it's already a full URL, return it
+  if (path.startsWith("http")) return path;
 
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Remove a key from localStorage.
- */
-export const removeJSON = (key: string): void => {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    // Ignore if storage is not accessible
-  }
-};
+  // Constructs the live Supabase Storage Public URL
+  // Expected input path format: 'projects/nexus-arch.png'
+  // Or: 'research/paper.pdf'
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${path.replace(/^\//, '')}`;
+}

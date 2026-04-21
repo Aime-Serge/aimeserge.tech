@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}
-      <section className="relative w-full overflow-hidden py-20 lg:py-32">
+      <section aria-label="Introduction" className="relative w-full overflow-hidden py-20 lg:py-32">
         <div className="container mx-auto px-6">
           <div className="flex flex-col items-center text-center">
             {/* Cyber Status Badge */}
@@ -47,10 +47,10 @@ export default function Home() {
       </section>
 
       {/* About Me / Mission Section */}
-      <section className="container mx-auto px-6 py-24 border-y border-slate-800/50">
+      <section id="about" aria-labelledby="about-heading" className="container mx-auto px-6 py-24 border-y border-slate-800/50">
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white">Systems Architect & AI Researcher</h2>
+            <h2 id="about-heading" className="text-3xl font-bold text-white">Systems Architect & AI Researcher</h2>
             <p className="text-slate-400 leading-relaxed text-lg">
               Hello! 👋 I’m <span className="text-white font-medium">Aime Serge UKOBIZABA</span>. I develop modern backend systems, APIs, and full-stack systems designed for performance and maintainability.
             </p>
@@ -74,29 +74,44 @@ export default function Home() {
           </div>
           
           <div className="relative">
-             {/* Engineering Approach Box */}
+      {/* Engineering Approach Box */}
              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 backdrop-blur-sm">
                 <h3 className="text-xl font-bold text-white mb-6">Engineering Approach</h3>
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <Shield className="h-6 w-6 text-cyan-500 flex-shrink-0" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-500">
+                      <Shield className="h-6 w-6" />
+                    </div>
                     <div>
                       <h4 className="text-white font-semibold">Security-First</h4>
                       <p className="text-sm text-slate-500">Encryption at rest and in transit, with hardened IAM protocols.</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <Cloud className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                      <Cloud className="h-6 w-6" />
+                    </div>
                     <div>
                       <h4 className="text-white font-semibold">Cloud-Native Scale</h4>
                       <p className="text-sm text-slate-500">Serverless & containerized architectures for global availability.</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <Cpu className="h-6 w-6 text-purple-500 flex-shrink-0" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                      <Cpu className="h-6 w-6" />
+                    </div>
                     <div>
                       <h4 className="text-white font-semibold">AI Integration</h4>
                       <p className="text-sm text-slate-500">Leveraging RAG and LLMs to automate complex human workflows.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                      <Terminal className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-semibold">Software Craftsmanship</h4>
+                      <p className="text-sm text-slate-500">Applying DS&A, Clean Code, and System Design patterns.</p>
                     </div>
                   </div>
                 </div>
@@ -105,9 +120,51 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Software Engineering Demonstrations Section */}
+      <section id="expertise" aria-labelledby="expertise-heading" className="container mx-auto px-6 py-24 bg-slate-900/10 border-y border-slate-800/30">
+        <div className="text-center mb-16">
+          <h2 id="expertise-heading" className="text-3xl font-bold text-white mb-4">Software Engineering <span className="text-cyan-500">Demonstrations</span></h2>
+          <p className="text-slate-400 max-w-2xl mx-auto">Beyond specialized tools, I apply rigorous software engineering principles to ensure system reliability and code quality.</p>
+        </div>
+        
+        <div className="grid gap-8 md:grid-cols-3">
+          {[
+            {
+              title: "System Design",
+              desc: "Designing high-availability systems with Load Balancers, Caching, and Microservices.",
+              icon: <Globe className="h-8 w-8 text-cyan-400" />,
+              skills: ["Microservices", "System Design Patterns", "Distributed Systems"]
+            },
+            {
+              title: "Algorithms & Logic",
+              desc: "Expertise in Data Structures and Algorithms for optimized data processing.",
+              icon: <Cpu className="h-8 w-8 text-emerald-400" />,
+              skills: ["Complexity Analysis", "Graph Theory", "Optimization"]
+            },
+            {
+              title: "DevOps & CI/CD",
+              desc: "Automating the software lifecycle with infrastructure as code and CI/CD pipelines.",
+              icon: <Cloud className="h-8 w-8 text-purple-400" />,
+              skills: ["Docker", "Kubernetes", "GitHub Actions"]
+            }
+          ].map((demo, idx) => (
+            <div key={idx} className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-8 transition-all hover:border-cyan-500/50 hover:-translate-y-1">
+              <div className="mb-6">{demo.icon}</div>
+              <h3 className="text-xl font-bold text-white mb-3">{demo.title}</h3>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">{demo.desc}</p>
+              <div className="flex flex-wrap gap-2">
+                {demo.skills.map(s => (
+                  <span key={s} className="text-[10px] font-mono bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">{s}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Services Grid */}
-      <section className="container mx-auto px-6 py-24 w-full">
-        <h2 className="text-center text-2xl font-mono text-cyan-500 mb-12 uppercase tracking-widest">How I Can Help You</h2>
+      <section id="services" aria-labelledby="services-heading" className="container mx-auto px-6 py-24 w-full">
+        <h2 id="services-heading" className="text-center text-2xl font-mono text-cyan-500 mb-12 uppercase tracking-widest">How I Can Help You</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             { title: "Scalable Backend Systems", desc: "Building high-throughput engines using Node.js and Django." },

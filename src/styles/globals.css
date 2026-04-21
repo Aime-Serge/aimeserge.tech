@@ -1,3 +1,27 @@
 @import "tailwindcss";
 
+@theme {
+  --animate-progress-indefinite: progress-indefinite 2s linear infinite;
+
+  @keyframes progress-indefinite {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
+:root {
+  --font-sans-custom: "Space Grotesk", "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono-custom: "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
+}
+
+body {
+  font-family: var(--font-sans-custom);
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono-custom);
+}
+
 /* Toast entrance animation */

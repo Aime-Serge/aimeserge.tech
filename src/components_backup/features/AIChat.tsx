@@ -68,7 +68,7 @@ export default function AIChat() {
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
               <Bot className="mb-3 h-10 w-10 opacity-30" />
-              <p className="text-sm">Connection Established.<br/>Ask me about Aime's experience, architecture, or skills.</p>
+              <p className="text-sm">Connection Established.<br/>Ask me about Aime&apos;s experience, architecture, or skills.</p>
             </div>
           )}
           {messages.map((m) => (
