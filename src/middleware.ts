@@ -9,8 +9,16 @@ import { jwtVerify } from 'jose';
  */
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
-  
-  // Stricter Content-Security-Policy (CSP) - Relaxed for Dev stability
+  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const country = request.geo?.country || 'unknown';
+
+  // 1. Advanced Security: Block Suspicious Regions (Optional/Configurable)
+  const blockedCountries = ['XX']; // Placeholder for restricted regions if needed
+  if (blockedCountries.includes(country)) {
+    return new NextResponse('Access Denied: Geographic Security Policy.', { status: 403 });
+  }
+
+  // 2. CSP Injection
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co;
@@ -28,6 +36,8 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', cspHeader);
+  requestHeaders.set('x-visitor-ip', ip);
+  requestHeaders.set('x-visitor-country', country);
 
   const response = NextResponse.next({
     request: {
@@ -35,34 +45,31 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Inject Security Headers into Response
-  // response.headers.set('Content-Security-Policy', cspHeader);
+  // 3. Inject Security Headers into Response
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    if (key !== 'Content-Security-Policy') {
-      response.headers.set(key, value);
-    }
+    response.headers.set(key, value);
   });
+  
+  // Ensure CSP is also in the response headers for extra compatibility
+  response.headers.set('Content-Security-Policy', cspHeader);
 
-  // 2. Protect Admin & Dashboard (Zero-Trust)
+  // 4. Protect Admin & Dashboard (Zero-Trust)
   const isProtectedPath = request.nextUrl.pathname.startsWith('/admin') || 
                           request.nextUrl.pathname.startsWith('/dashboard');
 
   if (isProtectedPath) {
     const token = request.cookies.get('auth_token')?.value;
     
-    // Redirect if no token or if we are in production and it's not a secure session
     if (!token) return redirectToLogin(request);
 
     try {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET);
       const { payload } = await jwtVerify(token, secret);
       
-      // CRITICAL: Check if the user has the 'admin' role or specific ID
       if (payload.role !== 'authenticated' && payload.email !== process.env.ADMIN_EMAIL) {
         return NextResponse.redirect(new URL('/', request.url));
       }
     } catch {
-      console.error('Security Breach Attempt or Expired Token');
       return redirectToLogin(request);
     }
   }
@@ -74,20 +81,12 @@ function redirectToLogin(request: NextRequest) {
   const url = new URL('/login', request.url);
   url.searchParams.set('callbackUrl', request.nextUrl.pathname);
   const response = NextResponse.redirect(url);
-  // Clear the invalid token if any
   response.cookies.delete('auth_token');
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
