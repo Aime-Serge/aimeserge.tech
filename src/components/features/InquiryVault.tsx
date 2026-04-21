@@ -1,23 +1,37 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Trash2, Mail, Phone, Globe, User, Clock, CheckCircle2, ChevronRight, Briefcase, Zap } from "lucide-react";
+import { MessageSquare, Trash2, Mail, Phone, Globe, User, Briefcase, Zap, Activity } from "lucide-react";
 import { deleteContent } from "@/actions/admin-actions";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/security/headers";
 
+interface Inquiry {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  interest: string;
+  contact_type: string;
+  newsletter_opt_in: boolean;
+  location?: string | null;
+  message?: string | null;
+  whatsapp?: string | null;
+  linkedin_url?: string | null;
+}
+
 export default function InquiryVault() {
-  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
   async function loadInquiries() {
     const { data } = await supabase
       .from('contacts')
       .select('*')
       .order('created_at', { ascending: false });
-    setInquiries(data || []);
+    setInquiries((data as Inquiry[]) || []);
     setIsLoading(false);
   }
 
@@ -60,7 +74,7 @@ export default function InquiryVault() {
                 <span className="font-bold text-white text-sm truncate pr-2">{inq.name}</span>
                 <span className="text-[9px] text-slate-600 font-mono">{new Date(inq.created_at).toLocaleDateString()}</span>
               </div>
-              <p className="text-xs text-slate-500 truncate mb-2">{inq.interest} // {inq.contact_type}</p>
+              <p className="text-xs text-slate-500 truncate mb-2">{inq.interest} / {inq.contact_type}</p>
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter",
@@ -119,7 +133,7 @@ export default function InquiryVault() {
                   <MessageSquare className="h-3 w-3" /> Data_Payload_Intercept
                 </h4>
                 <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 leading-relaxed text-slate-300 whitespace-pre-wrap italic">
-                  "{selectedInquiry.message}"
+                  &quot;{selectedInquiry.message}&quot;
                 </div>
               </div>
 
@@ -128,12 +142,12 @@ export default function InquiryVault() {
                 <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Communication_Nodes</h4>
                 <div className="flex flex-wrap gap-3">
                   {selectedInquiry.whatsapp && (
-                    <a href={`https://wa.me/${selectedInquiry.whatsapp}`} target="_blank" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
+                    <a href={`https://wa.me/${selectedInquiry.whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all">
                       <Phone className="h-3.5 w-3.5" /> WhatsApp
                     </a>
                   )}
                   {selectedInquiry.linkedin_url && (
-                    <a href={selectedInquiry.linkedin_url} target="_blank" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 text-xs font-bold hover:bg-blue-500 hover:text-white transition-all">
+                    <a href={selectedInquiry.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 text-xs font-bold hover:bg-blue-500 hover:text-white transition-all">
                       <Globe className="h-3.5 w-3.5" /> LinkedIn_Node
                     </a>
                   )}

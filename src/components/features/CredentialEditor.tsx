@@ -1,19 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Award, Save, X, Upload, Trash2, Calendar, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { Award, Save, X, Upload, Calendar, ShieldCheck, Link as LinkIcon } from "lucide-react";
 import { upsertContent, uploadArtifact } from "@/actions/admin-actions";
 import { toast } from "react-hot-toast";
 
+interface CredentialFormData {
+  id?: string;
+  name: string;
+  provider: string;
+  issue_date: string;
+  expiry_date: string;
+  verify_url: string;
+  pdf_url: string;
+  description: string;
+}
+
 interface CredentialEditorProps {
-  initialData?: any;
+  initialData?: Partial<CredentialFormData>;
   onClose: () => void;
 }
 
 export default function CredentialEditor({ initialData, onClose }: CredentialEditorProps) {
   const [isPending, setIsPending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CredentialFormData>({
     id: initialData?.id || undefined,
     name: initialData?.name || "",
     provider: initialData?.provider || "ALX Africa",

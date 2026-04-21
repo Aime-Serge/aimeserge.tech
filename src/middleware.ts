@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { securityHeaders } from './lib/security/headers';
+import { securityHeaders } from './lib/security/securityHeaders';
 import { jwtVerify } from 'jose';
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-at-least-32-chars-long'
-);
 
 /**
  * Advanced Edge Middleware
  * Handles Zero-Trust Auth, CSP Injection, and Global Rate-Limiting logs.
  */
 export async function middleware(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const nonce = btoa(crypto.randomUUID());
   
   // Stricter Content-Security-Policy (CSP) - Relaxed for Dev stability
   const cspHeader = `
@@ -65,7 +61,7 @@ export async function middleware(request: NextRequest) {
       if (payload.role !== 'authenticated' && payload.email !== process.env.ADMIN_EMAIL) {
         return NextResponse.redirect(new URL('/', request.url));
       }
-    } catch (err) {
+    } catch {
       console.error('Security Breach Attempt or Expired Token');
       return redirectToLogin(request);
     }

@@ -1,21 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Shield, LayoutDashboard, Database, FileText, 
-  MessageSquare, BarChart3, Settings, Plus, 
+  MessageSquare, Plus, 
   TrendingUp, Users, Download, Bot, Send, 
-  Mic, MicOff, Activity, Zap, Cpu
+  Mic, Activity, Zap, Cpu, Award
 } from "lucide-react";
-import { getAdminAnalytics } from "@/actions/admin-actions";
+import { getAdminAnalytics, getSecurityLogs } from "@/actions/admin-actions";
 import { cn } from "@/lib/security/headers";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
+import { toast } from "react-hot-toast";
 import ProjectEditor from "@/components/features/ProjectEditor";
 import CredentialEditor from "@/components/features/CredentialEditor";
 import ResearchEditor from "@/components/features/ResearchEditor";
 import BroadcastEditor from "@/components/features/BroadcastEditor";
 import InquiryVault from "@/components/features/InquiryVault";
+import ResumeManager from "@/components/features/ResumeManager";
+
+type AdminChatMessage = UIMessage & {
+  content?: string;
+};
+
+function getAdminMessageText(message: AdminChatMessage): string {
+  if (typeof message.content === "string") {
+    return message.content;
+  }
+
+  return message.parts
+    .filter(isTextUIPart)
+    .map((part) => part.text)
+    .join("");
+}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -30,14 +48,61 @@ export default function AdminDashboard() {
   const [showBroadcastEditor, setShowBroadcastEditor] = useState(false);
 
   // Edit States
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<Record<string, unknown> | undefined>(undefined);
+  const [aiInput, setAiInput] = useState("");
+  const [chatTransport] = useState(() => new DefaultChatTransport({ api: "/api/v1/ai/chat" }));
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading: isAiThinking } = useChat({
-    api: '/api/v1/ai/chat',
-    initialMessages: [
-      { id: 'welcome', role: 'assistant', content: 'Admin Session Established. I am ready to help you manage your portfolio artifacts. You can ask me to "List recent inquiries" or "Prepare a new project entry".' }
-    ]
+  const handleExportLogs = async () => {
+    toast.loading("Fetching audit trail...");
+    const result = await getSecurityLogs();
+    
+    if (result.success && result.data) {
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `security_audit_${new Date().toISOString()}.json`;
+      a.click();
+      toast.dismiss();
+      toast.success("Audit Logs Exported.");
+    } else {
+      toast.dismiss();
+      toast.error("Export Failed.");
+    }
+  };
+
+  const { messages, sendMessage, status } = useChat<UIMessage>({
+    transport: chatTransport,
+    messages: [
+      {
+        id: "welcome",
+        role: "assistant",
+        parts: [
+          {
+            type: "text",
+            text: 'Admin Session Established. I am ready to help you manage your portfolio artifacts. You can ask me to "List recent inquiries" or "Prepare a new project entry".',
+          },
+        ],
+      },
+    ],
   });
+  const isAiThinking = status === "submitted" || status === "streaming";
+
+  const handleAiSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isAiActive || isAiThinking) {
+      return;
+    }
+
+    const trimmedInput = aiInput.trim();
+    if (!trimmedInput) {
+      return;
+    }
+
+    sendMessage({ text: trimmedInput });
+    setAiInput("");
+  };
 
   useEffect(() => {
     async function loadStats() {
@@ -50,6 +115,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "resume", label: "Resume/CV", icon: FileText },
     { id: "projects", label: "Projects", icon: Database },
     { id: "research", label: "Research", icon: FileText },
     { id: "broadcasts", label: "Blog", icon: TrendingUp },
@@ -98,7 +164,7 @@ export default function AdminDashboard() {
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Digital Twin</span>
               <div className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed italic">"Always active, optimizing your cloud presence."</p>
+            <p className="text-[10px] text-slate-400 leading-relaxed italic">&quot;Always active, optimizing your cloud presence.&quot;</p>
           </div>
         </div>
       </aside>
@@ -127,7 +193,7 @@ export default function AdminDashboard() {
             </button>
             <button 
               onClick={() => { 
-                setEditingItem(null);
+                setEditingItem(undefined);
                 if (activeTab === 'projects') setShowProjectEditor(true);
                 else if (activeTab === 'research') setShowResearchEditor(true);
                 else if (activeTab === 'broadcasts') setShowBroadcastEditor(true);
@@ -236,6 +302,11 @@ export default function AdminDashboard() {
                 </>
                 )}
 
+                {/* Resume Asset Management */}
+                {activeTab === "resume" && (
+                <ResumeManager />
+                )}
+
                 {/* Inquiry Vault View */}
                 {activeTab === "inquiries" && (
                 <InquiryVault />
@@ -250,11 +321,11 @@ export default function AdminDashboard() {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-widest">{activeTab}_DATA_VAULT</h3>
                   <p className="text-slate-500 max-w-sm mx-auto text-sm leading-relaxed mb-8">
-                    Authenticated session active. Click 'CREATE_ARTIFACT' to add a new record to this module.
+                    Authenticated session active. Click &apos;CREATE_ARTIFACT&apos; to add a new record to this module.
                   </p>
                   <button 
                     onClick={() => {
-                      setEditingItem(null);
+                      setEditingItem(undefined);
                       if (activeTab === 'projects') setShowProjectEditor(true);
                       else if (activeTab === 'research') setShowResearchEditor(true);
                       else if (activeTab === 'broadcasts') setShowBroadcastEditor(true);
@@ -267,7 +338,7 @@ export default function AdminDashboard() {
                 </div>
                 </div>
                 )}
-                </main>
+                </div>
 
           {/* Right Grid: AI Control Console */}
           <aside className="space-y-6">
@@ -291,7 +362,10 @@ export default function AdminDashboard() {
 
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800">
-                {messages.map((m) => (
+                {messages.map((m) => {
+                  const messageText = getAdminMessageText(m as AdminChatMessage);
+
+                  return (
                   <div key={m.id} className={cn(
                     "flex flex-col max-w-[90%]",
                     m.role === 'user' ? "ml-auto items-end" : "items-start"
@@ -302,10 +376,11 @@ export default function AdminDashboard() {
                         ? "bg-cyan-600 text-white rounded-br-sm shadow-lg" 
                         : "bg-slate-800 text-slate-300 rounded-bl-sm border border-slate-700"
                     )}>
-                      {m.content}
+                      {messageText}
                     </div>
                   </div>
-                ))}
+                );
+                })}
                 {isAiThinking && (
                   <div className="flex items-center gap-1.5 p-2 bg-slate-800/50 rounded-xl w-fit">
                     <span className="h-1 w-1 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -316,7 +391,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* AI Input Area */}
-              <form onSubmit={handleSubmit} className="p-4 bg-slate-900/80 border-t border-slate-800">
+              <form onSubmit={handleAiSubmit} className="p-4 bg-slate-900/80 border-t border-slate-800">
                 <div className="relative flex items-center gap-2">
                   <button
                     disabled={!isAiActive}
@@ -327,20 +402,20 @@ export default function AdminDashboard() {
                   </button>
                   <input
                     disabled={!isAiActive}
-                    value={input}
-                    onChange={handleInputChange}
+                    value={aiInput}
+                    onChange={(event) => setAiInput(event.target.value)}
                     placeholder="Enter AI Admin Command..."
                     className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 transition-all"
                   />
                   <button
-                    disabled={!isAiActive || isAiThinking}
+                    disabled={!isAiActive || isAiThinking || !aiInput.trim()}
                     type="submit"
                     className="h-10 w-10 flex items-center justify-center rounded-xl bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
                   >
                     <Send className="h-4 w-4" />
                   </button>
                 </div>
-              </aside>
+              </form>
             </div>
 
             {/* Quick Actions Card */}
@@ -351,7 +426,10 @@ export default function AdminDashboard() {
                   <span className="text-[10px] font-bold text-slate-400 group-hover:text-cyan-400 transition-colors">PURGE_CDN_CACHE</span>
                   <Zap className="h-3 w-3 text-slate-600 group-hover:text-cyan-500" />
                 </button>
-                <button className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/30 transition-all group">
+                <button 
+                  onClick={handleExportLogs}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/30 transition-all group"
+                >
                   <span className="text-[10px] font-bold text-slate-400 group-hover:text-cyan-400 transition-colors">EXPORT_LOGS</span>
                   <Activity className="h-3 w-3 text-slate-600 group-hover:text-cyan-500" />
                 </button>

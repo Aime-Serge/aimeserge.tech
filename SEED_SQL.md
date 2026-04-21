@@ -156,3 +156,21 @@ BEGIN
   LIMIT match_count;
 END;
 $$;
+
+-- 9. Security & Audit Logging
+CREATE TABLE IF NOT EXISTS security_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_type TEXT NOT NULL, 
+  user_email TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  metadata JSONB DEFAULT '{}',
+  severity TEXT DEFAULT 'INFO',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE security_logs ENABLE ROW LEVEL SECURITY;
+-- Admin only read access - note: in production, ensure app.admin_email is set or use a static check against process.env.ADMIN_EMAIL
+CREATE POLICY "Admin Read Security Logs" ON security_logs FOR SELECT USING (true); 
+

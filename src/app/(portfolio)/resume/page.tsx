@@ -1,6 +1,6 @@
-import { Download, ExternalLink, FileText, CheckCircle, GraduationCap, Briefcase, Cloud, Calendar, Building2, Tag } from "lucide-react";
+import { Download, ExternalLink, FileText, CheckCircle, GraduationCap, Briefcase, Cloud, Calendar, Building2 } from "lucide-react";
 import BadgeShowcase from "@/components/features/BadgeShowcase";
-import { getCertificates } from "@/actions/resume-actions";
+import { getCertificates, getLatestResume } from "@/actions/resume-actions";
 
 export const metadata = {
   title: "Resume | Aime Serge UKOBIZABA",
@@ -17,6 +17,7 @@ const skillMatrix = [
 
 export default async function ResumePage() {
   const certificates = await getCertificates();
+  const latestResumeUrl = await getLatestResume();
 
   return (
     <div className="container mx-auto px-6 py-12 lg:py-20">
@@ -28,8 +29,10 @@ export default async function ResumePage() {
           <p className="mt-4 text-slate-400 text-lg">ALX Alumni | Google Cloud Certified | AI Researcher</p>
         </div>
         <a 
-          href="/uploads/AimeSergeUkobizabaResume.pdf" 
+          href={latestResumeUrl || "/uploads/AimeSergeUkobizabaResume.pdf"} 
           download
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-3 font-bold text-white transition hover:bg-cyan-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
         >
           <Download className="h-5 w-5" />

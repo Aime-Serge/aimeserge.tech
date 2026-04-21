@@ -1,19 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Save, X, Database, Globe, Shield, Cpu, Code } from "lucide-react";
+import { Plus, Trash2, Save, X, Database, Cpu } from "lucide-react";
 import { upsertContent } from "@/actions/admin-actions";
 import { toast } from "react-hot-toast";
-import { cn } from "@/lib/security/headers";
+
+type ProjectCategory = "AI" | "Security" | "Cloud" | "Software Engineering" | "Full-Stack";
+
+interface ProjectFormData {
+  id?: string;
+  title: string;
+  slug: string;
+  tagline: string;
+  role: string;
+  category: ProjectCategory;
+  summary: string;
+  description: string;
+  tools: string[];
+  features: string[];
+  url: string;
+  pdf_url: string;
+}
 
 interface ProjectEditorProps {
-  initialData?: any;
+  initialData?: Partial<ProjectFormData>;
   onClose: () => void;
 }
 
 export default function ProjectEditor({ initialData, onClose }: ProjectEditorProps) {
   const [isPending, setIsPending] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProjectFormData>({
     id: initialData?.id || undefined,
     title: initialData?.title || "",
     slug: initialData?.slug || "",
@@ -22,14 +38,13 @@ export default function ProjectEditor({ initialData, onClose }: ProjectEditorPro
     category: initialData?.category || "Software Engineering",
     summary: initialData?.summary || "",
     description: initialData?.description || "",
-    tools: initialData?.tools || [],
-    features: initialData?.features || [],
+    tools: Array.isArray(initialData?.tools) ? initialData.tools : [],
+    features: Array.isArray(initialData?.features) ? initialData.features : [],
     url: initialData?.url || "",
     pdf_url: initialData?.pdf_url || "",
   });
 
   const [newTool, setNewTool] = useState("");
-  const [newFeature, setNewFeature] = useState("");
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,13 +65,6 @@ export default function ProjectEditor({ initialData, onClose }: ProjectEditorPro
     if (newTool && !formData.tools.includes(newTool)) {
       setFormData({ ...formData, tools: [...formData.tools, newTool] });
       setNewTool("");
-    }
-  };
-
-  const addFeature = () => {
-    if (newFeature && !formData.features.includes(newFeature)) {
-      setFormData({ ...formData, features: [...formData.features, newFeature] });
-      setNewFeature("");
     }
   };
 
@@ -127,7 +135,7 @@ export default function ProjectEditor({ initialData, onClose }: ProjectEditorPro
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Primary_Cluster</label>
             <select 
               value={formData.category}
-              onChange={e => setFormData({...formData, category: e.target.value as any})}
+              onChange={e => setFormData({...formData, category: e.target.value as ProjectCategory})}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none appearance-none"
             >
               <option value="AI">Artificial Intelligence</option>

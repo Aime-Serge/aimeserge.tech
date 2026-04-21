@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { loginAdmin } from "@/actions/admin-actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -16,18 +16,22 @@ export default function LoginPage() {
     setIsPending(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await loginAdmin(email, password);
 
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       toast.success("Identity Verified. Accessing Vault...");
-      router.refresh();
+      
+      // Force a full router refresh and move to admin
       router.push("/admin");
-    } catch (err: any) {
-      toast.error("Auth Failure: " + err.message);
+      setTimeout(() => {
+        window.location.href = "/admin"; // Fallback to ensure middleware sees the new cookie
+      }, 100);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Authentication error";
+      toast.error("Auth Failure: " + message);
     } finally {
       setIsPending(false);
     }
