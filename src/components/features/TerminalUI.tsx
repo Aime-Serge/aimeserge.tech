@@ -77,7 +77,7 @@ export default function TerminalUI() {
         setTimeout(() => router.push("/"), 800);
         break;
       default:
-        output = <span className="text-red-400">Command not found: {cmd}. Type 'help' for available commands.</span>;
+        output = <span className="text-red-400">Command not found: {cmd}. Type &apos;help&apos; for available commands.</span>;
     }
 
     setHistory((prev) => [...prev, { input: cmd, output }]);
@@ -103,7 +103,7 @@ export default function TerminalUI() {
         <div className="mb-6 text-emerald-400">
           Welcome to the Cyber-Cloud Terminal v2.0.0.<br />
           System check... <span className="text-cyan-400">OK</span>.<br />
-          Type 'help' to see available commands.
+          Type &apos;help&apos; to see available commands.
         </div>
         
         {history.map((cmd, i) => (

@@ -30,7 +30,7 @@ export default function Footer() {
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-white font-bold font-mono">
               <ShieldCheck className="h-6 w-6 text-cyan-500" />
-              <span className="text-lg tracking-tight">AIME SERGE</span>
+              <span className="text-lg tracking-tight">AIME SERGE UKOBIZABA</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
               Senior Software Engineer specializing in Cyber-Cloud architectures and AI-powered solutions. 

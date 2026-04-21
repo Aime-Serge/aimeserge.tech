@@ -1,20 +1,9 @@
-import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Geist } from "next/font/google";
+import type { Metadata } from "next";
 import "../styles/globals.css";
 import { cn } from "@/lib/security/headers";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ClientWrapper from "@/components/layout/ClientWrapper";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Aime Serge | Cyber-Cloud Engineer & AI Architect",
@@ -31,9 +20,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-slate-950 font-sans antialiased selection:bg-cyan-500/30",
-          geistSans.variable,
-          jetbrainsMono.variable
+          "min-h-screen bg-slate-950 antialiased selection:bg-cyan-500/30"
         )}
       >
         <div className="relative flex min-h-screen flex-col">
