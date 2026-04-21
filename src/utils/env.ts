@@ -9,7 +9,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
-export const validateEnv = () => {
+type Env = z.infer<typeof envSchema>;
+
+export const validateEnv = (): Partial<Env> => {
   const result = envSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -21,10 +23,10 @@ export const validateEnv = () => {
 
   if (!result.success) {
     console.warn("⚠️ Environment Variable Validation Warning:", result.error.format());
-    return (result.data || {}) as any;
+    return {};
   }
 
   return result.data;
 };
 
-export const env = typeof window === "undefined" ? validateEnv() : ({} as any);
+export const env: Partial<Env> = typeof window === "undefined" ? validateEnv() : {};
