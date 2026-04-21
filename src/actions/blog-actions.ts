@@ -3,6 +3,47 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { unstable_cache } from 'next/cache';
 import { type Broadcast, fallbackBroadcasts } from "@/types/blog";
+import { openai } from "@ai-sdk/openai";
+import { embed } from "ai";
+
+/**
+ * Syncs a broadcast to the AI Knowledge Base (pgvector)
+ * This allows the Digital Twin to answer questions about specific blog posts.
+ */
+export async function syncBroadcastToKnowledge(broadcast: Broadcast) {
+  const supabase = createServerSupabaseClient();
+  
+  try {
+    // 1. Create a dense technical chunk
+    const contentToEmbed = `Topic: ${broadcast.title}\nCategory: ${broadcast.category}\nContent: ${broadcast.excerpt}\nFull Detail: ${broadcast.content}`;
+
+    // 2. Generate embedding
+    const { embedding } = await embed({
+      model: openai.embedding("text-embedding-3-small"),
+      value: contentToEmbed,
+    });
+
+    // 3. Upsert into knowledge table
+    const { error } = await supabase
+      .from('knowledge')
+      .upsert({
+        id: broadcast.id, // Keep IDs synced
+        content: contentToEmbed,
+        embedding: embedding,
+        metadata: {
+          type: 'broadcast',
+          slug: broadcast.id,
+          title: broadcast.title
+        }
+      });
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("Knowledge Sync Error:", error);
+    return { success: false, error };
+  }
+}
 
 export async function getBroadcasts(): Promise<Broadcast[]> {
   return unstable_cache(
@@ -35,7 +76,7 @@ export async function getBroadcasts(): Promise<Broadcast[]> {
             shares: b.shares || 0
           }
         }));
-      } catch (e) {
+      } catch {
         return fallbackBroadcasts;
       }
     },
@@ -73,7 +114,7 @@ export async function getBroadcastById(id: string): Promise<Broadcast | null> {
             shares: data.shares || 0
           }
         };
-      } catch (e) {
+      } catch {
         return fallbackBroadcasts.find(b => b.id === id) || null;
       }
     },

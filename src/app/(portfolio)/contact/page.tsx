@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Shield, Send, User, Building2, Briefcase, Globe, Info, Clock, DollarSign, Linkedin, Zap, Phone, Heart, Users, CheckCircle2 } from "lucide-react";
+import { Mail, Shield, Send, User, Building2, Briefcase, Globe, Info, Clock, DollarSign, Linkedin, Zap, Phone, Heart, CheckCircle2 } from "lucide-react";
 import { submitContactForm } from "@/actions/contact-actions";
 import { toast } from "react-hot-toast";
 import { type ContactSubmission } from "@/types/contact";
@@ -138,7 +138,7 @@ export default function ContactPage() {
       } else {
         toast.error(result.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("Handshake timed out. Check network integrity.");
     } finally {
       setIsPending(false);

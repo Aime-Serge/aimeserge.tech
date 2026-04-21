@@ -1,19 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { Radio, Save, X, Tag, FileEdit, Cpu } from "lucide-react";
+import { Radio, X, FileEdit, Cpu, Send } from "lucide-react";
 import { upsertContent } from "@/actions/admin-actions";
+import { syncBroadcastToKnowledge } from "@/actions/blog-actions";
+import { type Broadcast } from "@/types/blog";
 import { toast } from "react-hot-toast";
 
-export default function BroadcastEditor({ initialData, onClose }: { initialData?: any; onClose: () => void }) {
+type BroadcastCategory = "Security" | "Cloud" | "AI" | "Engineering";
+
+interface BroadcastFormData {
+  id?: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: BroadcastCategory;
+  tags: string[];
+  read_time: string;
+}
+
+interface BroadcastEditorProps {
+  initialData?: Partial<BroadcastFormData>;
+  onClose: () => void;
+}
+
+export default function BroadcastEditor({ initialData, onClose }: BroadcastEditorProps) {
   const [isPending, setIsPending] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<BroadcastFormData>({
     id: initialData?.id || undefined,
     title: initialData?.title || "",
     excerpt: initialData?.excerpt || "",
     content: initialData?.content || "",
     category: initialData?.category || "Engineering",
-    tags: initialData?.tags || [],
+    tags: Array.isArray(initialData?.tags) ? initialData.tags : [],
     read_time: initialData?.read_time || "5 min read",
   });
 
@@ -21,8 +40,26 @@ export default function BroadcastEditor({ initialData, onClose }: { initialData?
     e.preventDefault();
     setIsPending(true);
     const result = await upsertContent('broadcasts', formData, '/blog');
+    
     if (result.success) {
       toast.success("Broadcast live on all nodes.");
+      
+      // Sync to AI Knowledge Base in background
+      toast.promise(
+        syncBroadcastToKnowledge({
+          ...formData,
+          id: result.data.id,
+          createdAt: new Date().toISOString(),
+          readTime: formData.read_time,
+          tags: formData.tags
+        } as Broadcast),
+        {
+          loading: 'Syncing to Digital Twin...',
+          success: 'Knowledge Base Updated.',
+          error: 'Sync Failed (Local Cache only).'
+        }
+      );
+
       onClose();
     }
     setIsPending(false);
@@ -48,7 +85,7 @@ export default function BroadcastEditor({ initialData, onClose }: { initialData?
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Category</label>
-            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as any})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none">
+            <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value as BroadcastCategory})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:border-cyan-500 outline-none">
               <option value="Security">Security</option>
               <option value="Cloud">Cloud</option>
               <option value="AI">AI</option>

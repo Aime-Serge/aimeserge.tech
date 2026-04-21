@@ -40,3 +40,63 @@ export async function submitContactForm(formData: ContactSubmission) {
     return { success: false, message: "Encryption failure during handshake." };
   }
 }
+
+/**
+ * High-speed Newsletter Subscription
+ * Handles email capture for the technical feed.
+ */
+export async function subscribeNewsletter(email: string) {
+  const supabase = createServerSupabaseClient();
+
+  try {
+    if (!email || !email.includes('@')) {
+      return { success: false, message: "Invalid node identity (Email)." };
+    }
+
+    // Try a resilient insert first (resort to message if newsletter_opt_in is missing)
+    const { error } = await supabase
+      .from('contacts')
+      .insert([
+        {
+          name: 'Subscriber',
+          email: email,
+          contact_type: 'Individual',
+          interest: 'Other',
+          message: '[AUTOMATED_SUBSCRIPTION] Direct entry from technical feed.',
+          newsletter_opt_in: true, 
+        }
+      ]);
+
+    // Handle the specific PGRST204 error (missing column)
+    if (error && error.message.includes('newsletter_opt_in')) {
+       console.warn("⚠️ DATABASE_SCHEMA_MISMATCH: Missing 'newsletter_opt_in' column. Retrying with fallback...");
+       
+       const { error: retryError } = await supabase
+        .from('contacts')
+        .insert([
+          {
+            name: 'Subscriber',
+            email: email,
+            contact_type: 'Individual',
+            interest: 'Other',
+            message: '[SUBSCRIPTION_SYNC] This user is a technical feed subscriber.',
+          }
+        ]);
+        
+       if (retryError) throw retryError;
+       return { success: true, message: "Connection established (Fallback node synced)." };
+    }
+
+    if (error) {
+      if (error.code === '23505') return { success: true, message: "Node already synchronized." };
+      throw error;
+    }
+
+    return { success: true, message: "Connection established. Node synced." };
+  } catch (err) {
+    console.error("Newsletter Error:", err);
+    return { success: false, message: "Transmission failed. Secure node handshake timeout." };
+  }
+}
+
+

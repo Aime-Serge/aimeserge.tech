@@ -2,6 +2,7 @@ import { getBroadcasts } from "@/actions/blog-actions";
 import Link from "next/link";
 import { Clock, ArrowRight, Eye, Share2, Radio, Globe } from "lucide-react";
 import { cn } from "@/lib/security/headers";
+import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
 export const metadata = {
   title: "Broadcast Feed | Technical Updates",
@@ -119,21 +120,7 @@ export default async function BlogPage() {
       </div>
 
       <div className="mt-20 border-t border-slate-800 pt-12 text-center">
-        <div className="mx-auto max-w-xl space-y-4 rounded-2xl bg-[#010409] p-8 border border-slate-800 shadow-2xl">
-          <Radio className="mx-auto h-8 w-8 text-cyan-500 animate-pulse" />
-          <h3 className="text-xl font-bold text-white uppercase tracking-widest font-mono">Sync with Node_01</h3>
-          <p className="text-slate-400 text-sm">Subscribe to receive raw logs and architectural breakdowns before they hit the feed.</p>
-          <div className="flex flex-col sm:flex-row gap-2 mt-6">
-            <input 
-              type="email" 
-              placeholder="operator@nexus.core" 
-              className="flex-1 rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono"
-            />
-            <button className="rounded-xl bg-cyan-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-cyan-700 uppercase tracking-widest font-mono">
-              CONNECT
-            </button>
-          </div>
-        </div>
+        <NewsletterSubscribe />
       </div>
     </div>
   );

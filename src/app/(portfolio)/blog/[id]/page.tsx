@@ -1,9 +1,11 @@
 import { getBroadcastById } from "@/actions/blog-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, Calendar, Eye, Share2, Radio } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, Eye, Share2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/security/headers";
+import BroadcastAudioPlayer from "@/components/shared/BroadcastAudioPlayer";
+import NewsletterSubscribe from "@/components/shared/NewsletterSubscribe";
 
 interface BlogPageProps {
   params: Promise<{ id: string }>;
@@ -78,6 +80,12 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
           </div>
         </div>
 
+        {/* Voice AI Readout */}
+        <BroadcastAudioPlayer 
+          title={post.title}
+          text={post.content.substring(0, 1000)} // Limiting length for synthesis stability
+        />
+
         {/* Visual Media Section (Video) */}
         {post.videoUrl && (
           <div className="mb-12 relative aspect-video overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl" aria-label="Broadcast Video content">
@@ -115,32 +123,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
         </div>
 
         <footer className="mt-16 border-t border-slate-800 pt-12">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-8 bg-[#010409] p-8 rounded-2xl border border-slate-800">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-full bg-slate-800 flex items-center justify-center text-cyan-400 font-bold border border-slate-700 shadow-[0_0_15px_rgba(8,145,178,0.2)]">
-                AS
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white uppercase tracking-widest">Aime Serge UKOBIZABA</p>
-                <p className="text-xs text-slate-500 font-mono">SECURE_NODE_OPERATOR // KIGALI_RW</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-               <button 
-                className="flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700"
-              >
-                <Share2 className="h-4 w-4" />
-                RETRANSMIT
-              </button>
-              <button 
-                className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700"
-              >
-                <Radio className="h-4 w-4" />
-                SUBSCRIBE
-              </button>
-            </div>
-          </div>
+          <NewsletterSubscribe />
         </footer>
       </article>
     </div>
