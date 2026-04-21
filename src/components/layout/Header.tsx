@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Terminal, Shield, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/security/headers";
+import GlobalSearch from "@/components/features/GlobalSearch";
 
 const navItems = [
   { name: "Projects", href: "/projects" },
@@ -36,7 +37,8 @@ export default function Header() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-8">
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-6">
+          <GlobalSearch className="w-[320px]" />
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -78,6 +80,10 @@ export default function Header() {
           aria-label="Mobile Navigation"
           className="md:hidden border-b border-slate-800 bg-slate-950 px-6 py-4 space-y-4"
         >
+          <GlobalSearch
+            onNavigate={() => setIsMenuOpen(false)}
+            placeholder="Search content..."
+          />
           {navItems.map((item) => (
             <Link
               key={item.href}

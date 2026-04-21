@@ -1,5 +1,3 @@
-"use server";
-
 export interface Project {
   id: string;
   slug: string;
@@ -7,11 +5,16 @@ export interface Project {
   tagline: string;
   role: string;
   url?: string;
+  pdfUrl?: string;
+  videoUrl?: string;
+  images?: string[];
   summary: string;
   description: string; // Detailed STAR breakdown
   tools: string[];
   features: string[];
   category: "AI" | "Security" | "Cloud" | "Full-Stack";
+  views?: number;
+  likes?: number;
   createdAt: string;
 }
 
@@ -32,6 +35,8 @@ export const myProjects: Project[] = [
     tools: ["Google Cloud", "Vertex AI", "IoT Sensors", "Node.js", "Ubuntu"],
     features: ["Real-time GPS tracking", "Predictive fleet redistribution", "User-facing mobile app", "Regulator Dashboard"],
     category: "AI",
+    views: 1240,
+    likes: 188,
     createdAt: "2024-Q4"
   },
   {
@@ -50,6 +55,8 @@ export const myProjects: Project[] = [
     tools: ["Next.js", "TypeScript", "Vertex AI", "PostgreSQL", "Google Cloud IAM"],
     features: ["Semantic search integration", "Secure payment gateways", "Auto-scaling infrastructure", "Personalized recommendations"],
     category: "Full-Stack",
+    views: 980,
+    likes: 143,
     createdAt: "2024-Q3"
   },
   {
@@ -68,6 +75,8 @@ export const myProjects: Project[] = [
     tools: ["Node.js", "Django", "PostgreSQL", "Zod", "Upstash Redis"],
     features: ["JWT Auth", "RBAC", "Rate Limiting", "Pagination & Filtering", "Audit Logging"],
     category: "Security",
+    views: 1560,
+    likes: 226,
     createdAt: "2024-Q2"
   }
 ];
