@@ -1,4 +1,4 @@
-import { getProjectBySlug } from "@/actions/portfolio-actions";
+import { getProjectBySlug } from "@/modules/portfolio/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, FileText, CheckCircle2 } from "lucide-react";

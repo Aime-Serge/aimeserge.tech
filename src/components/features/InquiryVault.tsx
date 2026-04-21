@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MessageSquare, Trash2, Mail, Phone, Globe, User, Briefcase, Zap, Activity } from "lucide-react";
-import { deleteContent } from "@/actions/admin-actions";
+import { deleteContent } from "@/modules/admin/actions";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/security/headers";

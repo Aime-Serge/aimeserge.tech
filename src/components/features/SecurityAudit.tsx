@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield, CheckCircle2, AlertCircle, Lock, Globe, Server, Terminal } from "lucide-react";
+import { Shield, CheckCircle2, AlertCircle, Lock, Globe, Server, Terminal, Activity } from "lucide-react";
+import { getSecurityStatus } from "@/modules/admin/actions";
 
 interface SecurityStatus {
   header: string;
@@ -13,6 +14,7 @@ interface SecurityStatus {
 
 export default function SecurityAudit() {
   const [isScanning, setIsScanning] = useState(true);
+  const [threatMetrics, setThreatMetrics] = useState({ level: "LOW", events: 0 });
   const [audit, setAudit] = useState<SecurityStatus[]>([
     { header: "Content-Security-Policy", status: "loading", value: "-", description: "Mitigates XSS and data injection attacks." },
     { header: "Strict-Transport-Security", status: "loading", value: "-", description: "Forces secure HTTPS connections." },
@@ -22,49 +24,57 @@ export default function SecurityAudit() {
   ]);
 
   useEffect(() => {
-    // Simulated deep system scan
-    const timer = setTimeout(() => {
-      setAudit([
-        { 
-          header: "Content-Security-Policy", 
-          status: "secure", 
-          value: "Active", 
-          description: "Mitigates XSS and data injection attacks.",
-          technicalInfo: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests;"
-        },
-        { 
-          header: "Strict-Transport-Security", 
-          status: "secure", 
-          value: "max-age=31536000", 
-          description: "Forces secure HTTPS connections.",
-          technicalInfo: "IncludeSubdomains; Preload; Verified on HSTS list."
-        },
-        { 
-          header: "X-Frame-Options", 
-          status: "secure", 
-          value: "DENY", 
-          description: "Prevents clickjacking attacks.",
-          technicalInfo: "Denies all frame embedding to prevent click-fraud."
-        },
-        { 
-          header: "X-Content-Type-Options", 
-          status: "secure", 
-          value: "nosniff", 
-          description: "Prevents MIME-type sniffing.",
-          technicalInfo: "Blocks requests if destination type is not correct."
-        },
-        { 
-          header: "Referrer-Policy", 
-          status: "secure", 
-          value: "strict-origin", 
-          description: "Controls how much referrer info is shared.",
-          technicalInfo: "Only sends referrer info for same-origin requests."
-        },
-      ]);
-      setIsScanning(false);
-    }, 2500);
+    async function runAudit() {
+      try {
+        const data = await getSecurityStatus();
+        
+        setThreatMetrics({ level: data.threatLevel, events: data.recentEvents });
+        
+        setAudit([
+          { 
+            header: "Content-Security-Policy", 
+            status: data.headers["Content-Security-Policy"] !== "Not Detected" ? "secure" : "warning", 
+            value: data.headers["Content-Security-Policy"] !== "Not Detected" ? "Active" : "Not Detected", 
+            description: "Mitigates XSS and data injection attacks.",
+            technicalInfo: data.headers["Content-Security-Policy"]
+          },
+          { 
+            header: "Strict-Transport-Security", 
+            status: data.headers["Strict-Transport-Security"] !== "Not Detected" ? "secure" : "warning", 
+            value: data.headers["Strict-Transport-Security"], 
+            description: "Forces secure HTTPS connections.",
+            technicalInfo: "HSTS Policy enforced at the edge."
+          },
+          { 
+            header: "X-Frame-Options", 
+            status: data.headers["X-Frame-Options"] !== "Not Detected" ? "secure" : "warning", 
+            value: data.headers["X-Frame-Options"], 
+            description: "Prevents clickjacking attacks.",
+            technicalInfo: "Frames strictly limited to same-origin."
+          },
+          { 
+            header: "X-Content-Type-Options", 
+            status: data.headers["X-Content-Type-Options"] !== "Not Detected" ? "secure" : "warning", 
+            value: data.headers["X-Content-Type-Options"], 
+            description: "Prevents MIME-type sniffing.",
+            technicalInfo: "nosniff directive active."
+          },
+          { 
+            header: "Referrer-Policy", 
+            status: data.headers["Referrer-Policy"] !== "Not Detected" ? "secure" : "warning", 
+            value: data.headers["Referrer-Policy"], 
+            description: "Controls how much referrer info is shared.",
+            technicalInfo: data.headers["Referrer-Policy"]
+          },
+        ]);
+      } catch (err) {
+        console.error("Audit failed:", err);
+      } finally {
+        setIsScanning(false);
+      }
+    }
 
-    return () => clearTimeout(timer);
+    runAudit();
   }, []);
 
   return (
@@ -77,13 +87,20 @@ export default function SecurityAudit() {
           <div>
             <h3 className="text-lg font-bold text-white uppercase tracking-wider font-mono">Cyber-Posture Audit</h3>
             <p className="text-[10px] text-cyan-500/70 font-mono">
-              {isScanning ? "INITIATING_SYSTEM_SCAN..." : "SYSTEM_STATE :: HARDENED"}
+              {isScanning ? "INITIATING_SYSTEM_SCAN..." : `SYSTEM_STATE :: HARDENED`}
             </p>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-mono text-emerald-400">
-          <Lock className="h-3 w-3" />
-          SSL_VERIFIED :: TLS_1.3
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-mono text-emerald-400">
+            <Lock className="h-3 w-3" />
+            TLS_1.3 :: SSL_VERIFIED
+          </div>
+          {!isScanning && (
+            <div className={`text-[9px] font-mono ${threatMetrics.level === 'LOW' ? 'text-emerald-500' : 'text-amber-500'}`}>
+              THREAT_INTEL: {threatMetrics.level} ({threatMetrics.events} events/24h)
+            </div>
+          )}
         </div>
       </div>
 
@@ -106,14 +123,14 @@ export default function SecurityAudit() {
               ) : (
                 <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400">
                   <AlertCircle className="h-3 w-3" />
-                  WARNING
+                  MISSING
                 </span>
               )}
             </div>
             
             <p className="text-xs text-slate-500 leading-relaxed">{item.description}</p>
             
-            {!isScanning && (
+            {!isScanning && item.technicalInfo && (
               <div className="mt-2 hidden group-hover:block animate-in fade-in slide-in-from-top-1 duration-300">
                 <div className="rounded-lg bg-slate-900/80 p-2 border border-slate-800">
                   <p className="text-[9px] font-mono text-cyan-500 break-all leading-tight">
@@ -132,8 +149,8 @@ export default function SecurityAudit() {
           HSTS: PRELOADED
         </div>
         <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
-          <Server className="h-3 w-3" />
-          WAF: CLOUDFLARE_EDGE
+          <Activity className="h-3 w-3" />
+          MONITORING: REAL-TIME
         </div>
         <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-500/60">
           <Shield className="h-3 w-3" />

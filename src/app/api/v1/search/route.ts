@@ -1,6 +1,6 @@
-import { getBroadcasts } from "@/actions/blog-actions";
-import { getProjects } from "@/actions/portfolio-actions";
-import { getResearch } from "@/actions/research-actions";
+import { getBroadcasts } from "@/modules/communication/blog-actions";
+import { getProjects } from "@/modules/portfolio/actions";
+import { getResearch } from "@/modules/research/actions";
 import type { SearchResult, SearchResultType } from "@/types/search";
 import { rateLimit } from "@/utils/rateLimit";
 import { unstable_cache } from "next/cache";

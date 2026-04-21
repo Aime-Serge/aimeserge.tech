@@ -8,7 +8,7 @@ import {
   TrendingUp, Users, Download, Bot, Send, 
   Mic, Activity, Zap, Cpu, Award
 } from "lucide-react";
-import { getAdminAnalytics, getSecurityLogs } from "@/actions/admin-actions";
+import { getAdminAnalytics, getSecurityLogs } from "@/modules/admin/actions";
 import { cn } from "@/lib/security/headers";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";

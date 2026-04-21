@@ -1,4 +1,4 @@
-import { getResearch } from "@/actions/research-actions";
+import { getResearch } from "@/modules/research/actions";
 import ResearchFeed from "@/components/features/ResearchFeed";
 import ResearchSidebar from "@/components/shared/ResearchSidebar";
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2, Save, X, Database, Cpu } from "lucide-react";
-import { upsertContent } from "@/actions/admin-actions";
+import { upsertContent } from "@/modules/admin/actions";
 import { toast } from "react-hot-toast";
 
 type ProjectCategory = "AI" | "Security" | "Cloud" | "Software Engineering" | "Full-Stack";
@@ -50,7 +50,7 @@ export default function ProjectEditor({ initialData, onClose }: ProjectEditorPro
     e.preventDefault();
     setIsPending(true);
     
-    const result = await upsertContent('projects', formData, '/projects');
+    const result = await upsertContent({ table: 'projects', payload: formData, path: '/projects' });
     
     if (result.success) {
       toast.success("Project artifact synchronized successfully.");
