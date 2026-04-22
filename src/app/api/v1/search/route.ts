@@ -2,7 +2,7 @@ import { getBroadcasts } from "@/modules/communication/blog-actions";
 import { getProjects } from "@/modules/portfolio/actions";
 import { getResearch } from "@/modules/research/actions";
 import type { SearchResult, SearchResultType } from "@/types/search";
-import { rateLimit } from "@/utils/rateLimit";
+import { rateLimit } from "@/core/security/rateLimit";
 import { unstable_cache } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 

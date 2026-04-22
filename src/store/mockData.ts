@@ -1,5 +1,5 @@
 // src/store/mockData.ts
-import type { CaseStudy } from "@/types/caseStudy";
+import type { CaseStudy } from "@/modules/portfolio/caseStudy";
 
 export const initialCaseStudies: CaseStudy[] = [
   {

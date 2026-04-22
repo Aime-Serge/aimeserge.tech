@@ -2,7 +2,7 @@
 
 import { Activity } from "lucide-react";
 import SecurityAudit from "@/components/features/SecurityAudit";
-import { type ResearchPaper } from "@/types/research";
+import { type ResearchPaper } from "@/modules/research/types";
 
 interface ResearchSidebarProps {
   papers: ResearchPaper[];
