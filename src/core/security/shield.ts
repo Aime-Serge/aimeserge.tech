@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { rateLimit } from "./rateLimit";
 import { redactPII } from "./piiFilter";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { notifyAdmin } from "@/utils/notifications";
 
 interface ShieldOptions {
   limit?: number;
@@ -36,6 +37,14 @@ export function withShield<T, R>(
     // 2. Rate Limiting
     const rate = await rateLimit.check(config.limit!, config.windowInMs!, ip);
     if (!rate.success) {
+      // Notify Admin of potential Brute Force / Rate Limit violation
+      await notifyAdmin({
+        title: "Rate Limit Triggered",
+        message: `Security intercept: IP ${ip} exceeded limits on ${actionName}`,
+        type: 'SECURITY',
+        data: { Action: actionName, IP: ip }
+      });
+
       return { 
         success: false, 
         message: "Request synchronization failed. Rate limit exceeded." 
