@@ -1,14 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

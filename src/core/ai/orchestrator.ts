@@ -23,7 +23,7 @@ export const aiOrchestrator = {
     }
 
     return results
-      .map((r: any) => `[Source: ${r.metadata?.type || 'General Knowledge'}] ${r.content}`)
+      .map((r) => `[Source: ${r.metadata?.type || 'General Knowledge'}] ${r.content}`)
       .join("\n\n");
   },
 

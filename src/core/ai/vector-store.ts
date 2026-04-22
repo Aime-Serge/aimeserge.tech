@@ -3,14 +3,19 @@ import { openai } from "@ai-sdk/openai";
 import { embed } from "ai";
 
 export interface KnowledgeMetadata {
-  type: string;
+  type?: string;
   slug?: string;
   title?: string;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface KnowledgeMatch {
+  content: string;
+  metadata?: KnowledgeMetadata | null;
 }
 
 export const vectorStore = {
-  async search(query: string, limit: number = 3) {
+  async search(query: string, limit: number = 3): Promise<KnowledgeMatch[]> {
     const supabase = createServerSupabaseClient();
     
     try {
@@ -26,7 +31,7 @@ export const vectorStore = {
       });
 
       if (error) throw error;
-      return chunks || [];
+      return (chunks ?? []) as KnowledgeMatch[];
     } catch (e) {
       console.error("Vector search failed:", e);
       return [];

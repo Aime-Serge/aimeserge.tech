@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shield, CheckCircle2, AlertCircle, Lock, Globe, Server, Terminal, Activity } from "lucide-react";
+import { Shield, CheckCircle2, AlertCircle, Lock, Globe, Terminal, Activity } from "lucide-react";
 import { getSecurityStatus } from "@/modules/admin/actions";
 
 interface SecurityStatus {
