@@ -19,7 +19,8 @@ export default function LoginPage() {
       const result = await loginAdmin({ email, passcode: password });
 
       if (!result.success) {
-        throw new Error(result.error);
+        const errorMsg = 'error' in result ? result.error : ('message' in result ? result.message : 'Unknown error');
+        throw new Error(errorMsg);
       }
 
       toast.success("Identity Verified. Accessing Vault...");
