@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loginAdmin } from "@/actions/admin-actions";
+import { loginAdmin } from "@/modules/admin/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
@@ -16,7 +16,7 @@ export default function LoginPage() {
     setIsPending(true);
 
     try {
-      const result = await loginAdmin(email, password);
+      const result = await loginAdmin({ email, passcode: password });
 
       if (!result.success) {
         throw new Error(result.error);

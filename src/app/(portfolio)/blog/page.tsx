@@ -1,4 +1,4 @@
-import { getBroadcasts } from "@/actions/blog-actions";
+import { getBroadcasts } from "@/modules/communication/blog-actions";
 import Link from "next/link";
 import { Clock, ArrowRight, Eye, Share2, Radio, Globe } from "lucide-react";
 import { cn } from "@/lib/security/headers";

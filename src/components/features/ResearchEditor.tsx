@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Microscope, Save, X, Upload, Database } from "lucide-react";
-import { upsertContent, uploadArtifact } from "@/actions/admin-actions";
-import { syncResearchToKnowledge } from "@/actions/research-actions";
+import { upsertContent, uploadArtifact } from "@/modules/admin/actions";
+import { syncResearchToKnowledge } from "@/modules/research/actions";
 import { type ResearchPaper } from "@/types/research";
 import { toast } from "react-hot-toast";
 
@@ -48,7 +48,7 @@ export default function ResearchEditor({ initialData, onClose }: ResearchEditorP
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
-    const result = await upsertContent('research', formData, '/research');
+    const result = await upsertContent({ table: 'research', payload: formData, path: '/research' });
     
     if (result.success) {
       toast.success("Research artifact published.");

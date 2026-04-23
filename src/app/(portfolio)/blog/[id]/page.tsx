@@ -1,4 +1,4 @@
-import { getBroadcastById } from "@/actions/blog-actions";
+import { getBroadcastById } from "@/modules/communication/blog-actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Calendar, Eye, Share2 } from "lucide-react";

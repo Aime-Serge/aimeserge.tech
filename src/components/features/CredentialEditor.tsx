@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Award, Save, X, Upload, Calendar, ShieldCheck, Link as LinkIcon } from "lucide-react";
-import { upsertContent, uploadArtifact } from "@/actions/admin-actions";
+import { upsertContent, uploadArtifact } from "@/modules/admin/actions";
 import { toast } from "react-hot-toast";
 
 interface CredentialFormData {
@@ -53,7 +53,7 @@ export default function CredentialEditor({ initialData, onClose }: CredentialEdi
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
-    const result = await upsertContent('certificates', formData, '/resume');
+    const result = await upsertContent({ table: 'certificates', payload: formData, path: '/resume' });
     if (result.success) {
       toast.success("Credential synchronized.");
       onClose();

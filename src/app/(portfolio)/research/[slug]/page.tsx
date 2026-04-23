@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Microscope, Calendar, Download, Eye, FileText, Share2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { getPaperBySlug } from "@/actions/research-actions";
+import { getPaperBySlug } from "@/modules/research/actions";
 import ResearchActionButtons from "@/components/shared/ResearchActionButtons";
 import SecurityAudit from "@/components/features/SecurityAudit";
 

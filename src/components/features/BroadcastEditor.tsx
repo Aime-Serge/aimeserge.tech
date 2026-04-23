@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Radio, X, FileEdit, Cpu, Send } from "lucide-react";
-import { upsertContent } from "@/actions/admin-actions";
-import { syncBroadcastToKnowledge } from "@/actions/blog-actions";
+import { upsertContent } from "@/modules/admin/actions";
+import { syncBroadcastToKnowledge } from "@/modules/communication/blog-actions";
 import { type Broadcast } from "@/types/blog";
 import { toast } from "react-hot-toast";
 
@@ -39,7 +39,7 @@ export default function BroadcastEditor({ initialData, onClose }: BroadcastEdito
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
-    const result = await upsertContent('broadcasts', formData, '/blog');
+    const result = await upsertContent({ table: 'broadcasts', payload: formData, path: '/blog' });
     
     if (result.success) {
       toast.success("Broadcast live on all nodes.");
