@@ -56,7 +56,8 @@ export default function ProjectEditor({ initialData, onClose }: ProjectEditorPro
       toast.success("Project artifact synchronized successfully.");
       onClose();
     } else {
-      toast.error(`Sync Failure: ${result.error}`);
+      const errorMsg = "error" in result ? result.error : (result as any).message;
+      toast.error(`Sync Failure: ${errorMsg}`);
     }
     setIsPending(false);
   };

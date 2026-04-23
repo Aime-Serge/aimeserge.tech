@@ -128,7 +128,8 @@ async function upsertContentBase(params: { table: string, payload: object, path:
 export const upsertContent = withShield("content_upsert", upsertContentBase);
 
 
-export async function uploadArtifact(file: File, path: string) {
+async function uploadArtifactBase(params: { file: File, path: string }) {
+  const { file, path } = params;
   try {
     const supabase = await validateAdminSession();
 
@@ -158,7 +159,10 @@ export async function uploadArtifact(file: File, path: string) {
   }
 }
 
-export async function deleteContent(table: string, id: string, path: string) {
+export const uploadArtifact = withShield("upload_artifact", uploadArtifactBase);
+
+async function deleteContentBase(params: { table: string, id: string, path: string }) {
+  const { table, id, path } = params;
   try {
     const supabase = await validateAdminSession();
     
@@ -175,6 +179,8 @@ export async function deleteContent(table: string, id: string, path: string) {
     return { success: false, error: getErrorMessage(err) };
   }
 }
+
+export const deleteContent = withShield("delete_content", deleteContentBase);
 
 export async function getAdminAnalytics() {
   try {
@@ -224,4 +230,22 @@ export async function getSecurityStatus() {
     systemState: "HARDENED",
     tlsVersion: "TLS_1.3" // Assumed for modern Vercel/Cloudflare deployments
   };
+}
+
+export async function getSecurityLogs() {
+  try {
+    const supabase = await validateAdminSession();
+    
+    const { data, error } = await supabase
+      .from('security_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) };
+  }
 }

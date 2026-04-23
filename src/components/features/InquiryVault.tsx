@@ -41,7 +41,7 @@ export default function InquiryVault() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to archive this inquiry?")) return;
-    const result = await deleteContent('contacts', id, '/admin');
+    const result = await deleteContent({ table: 'contacts', id, path: '/admin' });
     if (result.success) {
       toast.success("Inquiry archived.");
       loadInquiries();

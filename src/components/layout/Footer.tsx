@@ -1,4 +1,4 @@
-import { Github, Linkedin, Twitter, ShieldCheck, Mail, MapPin, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Twitter, Instagram, ShieldCheck, Mail, MapPin, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -38,7 +38,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-4">
               <a 
-                href="https://github.com" 
+                href="https://github.com/aime-serge" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="GitHub Profile"
@@ -47,7 +47,7 @@ export default function Footer() {
                 <Github className="h-5 w-5" />
               </a>
               <a 
-                href="https://linkedin.com" 
+                href="https://www.linkedin.com/in/aimesergeukobizaba/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="LinkedIn Profile"
@@ -56,13 +56,22 @@ export default function Footer() {
                 <Linkedin className="h-5 w-5" />
               </a>
               <a 
-                href="https://twitter.com" 
+                href="https://x.com/aime__serge" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="Twitter Profile"
                 className="rounded-full bg-slate-900 p-2.5 text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
               >
                 <Twitter className="h-5 w-5" />
+              </a>
+              <a 
+                href="https://www.instagram.com/_aime_serge/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="Instagram Profile"
+                className="rounded-full bg-slate-900 p-2.5 text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+              >
+                <Instagram className="h-5 w-5" />
               </a>
             </div>
           </div>

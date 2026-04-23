@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Shield, Send, User, Building2, Briefcase, Globe, Info, Clock, DollarSign, Linkedin, Zap, Phone, Heart, CheckCircle2 } from "lucide-react";
 import { submitContactForm } from "@/modules/communication/contact-actions";
 import { toast } from "react-hot-toast";
-import { type ContactSubmission } from "@/types/contact";
+import { type ContactSubmission } from "@/modules/communication/contact-types";
 import { cn } from "@/lib/security/headers";
 
 /**

@@ -40,12 +40,13 @@ export default function CredentialEditor({ initialData, onClose }: CredentialEdi
     if (!file) return;
 
     setIsUploading(true);
-    const result = await uploadArtifact(file, "certificates");
+    const result = await uploadArtifact({ file, path: "certificates" });
     if (result.success) {
       setFormData({ ...formData, pdf_url: result.url as string });
       toast.success("Document uploaded to secure storage.");
     } else {
-      toast.error("Upload failed: " + result.error);
+      const errorMsg = "error" in result ? result.error : (result as any).message;
+      toast.error("Upload failed: " + errorMsg);
     }
     setIsUploading(false);
   };
@@ -58,7 +59,8 @@ export default function CredentialEditor({ initialData, onClose }: CredentialEdi
       toast.success("Credential synchronized.");
       onClose();
     } else {
-      toast.error("Sync error: " + result.error);
+      const errorMsg = "error" in result ? result.error : (result as any).message;
+      toast.error("Sync error: " + errorMsg);
     }
     setIsPending(false);
   };

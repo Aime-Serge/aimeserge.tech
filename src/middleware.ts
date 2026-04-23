@@ -9,8 +9,8 @@ import { jwtVerify } from 'jose';
  */
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
-  const country = request.geo?.country || 'unknown';
+  const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const country = (request as any).geo?.country || 'unknown';
 
   // 1. Advanced Security: Block Suspicious Regions (Optional/Configurable)
   const blockedCountries = ['XX']; // Placeholder for restricted regions if needed

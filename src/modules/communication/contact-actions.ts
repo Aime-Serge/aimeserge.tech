@@ -3,6 +3,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { type ContactSubmission } from "./contact-types";
 import { withShield } from "@/core/security/shield";
+import { notifyAdmin } from "@/utils/notifications";
 
 async function submitContactFormBase(formData: ContactSubmission) {
   const supabase = createServerSupabaseClient();
@@ -34,6 +35,18 @@ async function submitContactFormBase(formData: ContactSubmission) {
       console.error("Supabase submission error:", error);
       return { success: false, message: "System failure during transmission. Please retry." };
     }
+
+    // Trigger Admin Notification
+    await notifyAdmin({
+      title: "New Inquiry Received",
+      message: `A new ${formData.interest} inquiry from ${formData.name}`,
+      type: 'INQUIRY',
+      data: {
+        Email: formData.email,
+        Interest: formData.interest,
+        Location: formData.location
+      }
+    });
 
     return { success: true, message: "Inquiry successfully logged in the secure vault." };
   } catch (err) {

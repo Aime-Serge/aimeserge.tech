@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CaseStudy } from "@/types/caseStudy";
+import { CaseStudy } from "@/modules/portfolio/caseStudy";
 import initialCaseStudies from "@/store/mockData";
 
 const STORAGE_KEY = "caseStudies_v1";
