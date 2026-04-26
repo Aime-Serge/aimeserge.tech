@@ -14,7 +14,8 @@ export default function Home() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500"></span>
               </span>
-              SOFTWARE_ENGINEER :: ALX_ALUMNI :: GOOGLE_CLOUD_CERTIFIED
+              SOFTWARE_ENGINEER   :: CYBERSECURITY_ANALYST   :: ASPIRING_AI_ENGINEER   :: GOOGLE_CLOUD_CERTIFIED  :: ALX VENTURES RWANDA AMBASSADOR   :: ALX_ALUMNI
+              
             </div>
 
             <h1 className="max-w-4xl text-4xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl leading-[1.1]">
@@ -39,7 +40,7 @@ export default function Home() {
                 className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/50 px-8 py-4 font-mono font-medium text-slate-300 backdrop-blur-sm transition hover:bg-slate-800"
               >
                 <Terminal className="h-4 w-4 text-cyan-500" />
-                Init_Terminal
+                Open_Terminal
               </Link>
             </div>
           </div>

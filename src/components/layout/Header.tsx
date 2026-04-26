@@ -57,7 +57,7 @@ export default function Header() {
             className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-1.5 text-xs font-mono text-slate-300 transition hover:bg-slate-700 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
           >
             <Terminal className="h-3.5 w-3.5" />
-            Terminal_Access
+            Terminal
           </Link>
         </nav>
 
@@ -104,7 +104,7 @@ export default function Header() {
             className="flex items-center gap-2 text-sm font-mono text-cyan-500"
           >
             <Terminal className="h-4 w-4" />
-            Terminal_Access
+            Terminal
           </Link>
         </nav>
       )}

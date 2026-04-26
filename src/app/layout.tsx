@@ -6,9 +6,9 @@ import Footer from "@/components/layout/Footer";
 import ClientWrapper from "@/components/layout/ClientWrapper";
 
 export const metadata: Metadata = {
-  title: "Aime Serge | Cyber-Cloud Engineer & AI Architect",
+  title: "Aime Serge Ukobizaba | Software Engineer, Cybersecurity Analyst, Aspiring AI Engineer & Cloud Architect Certisfied  ALX Ventures Rwanda Ambassador",
   description: "Advanced Full-Stack Portfolio focused on Cybersecurity, Cloud Infrastructure, and AI-Powered Solutions.",
-  metadataBase: new URL('https://aimeserge.dev'),
+  metadataBase: new URL('https://aimesergeonline.vercel.app'),
 };
 
 export default function RootLayout({
