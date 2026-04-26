@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "Aime Serge Ukobizaba | Software Engineer, Cybersecurity Analyst, Aspiring AI Engineer & Cloud Architect Certisfied  ALX Ventures Rwanda Ambassador",
   description: "Advanced Full-Stack Portfolio focused on Cybersecurity, Cloud Infrastructure, and AI-Powered Solutions.",
   metadataBase: new URL('https://aimesergeonline.vercel.app'),
+  icons: {
+    icon: "/logo.jpg",
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
