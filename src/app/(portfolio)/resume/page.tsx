@@ -52,7 +52,7 @@ export default async function ResumePage() {
               <article className="relative">
                 <div className="absolute -left-[41px] top-1 h-4 w-4 rounded-full border-4 border-slate-950 bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
                 <h3 className="text-xl font-bold text-white">Software Engineer</h3>
-                <p className="text-cyan-500 font-mono text-sm">ALX Rwanda / Freelance | 2023 - Present</p>
+                <p className="text-cyan-500 font-mono text-sm">ALX Rwanda / ALX Ventures Rwanda Ambassador | 2026 - Present</p>
                 <ul className="mt-4 space-y-2 text-slate-400 text-sm leading-relaxed list-disc ml-4">
                    <li>Building secure and scalable backend systems and APIs for startups.</li>
                    <li>Developing full-stack applications with Next.js and Tailwind CSS.</li>

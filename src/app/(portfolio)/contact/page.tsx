@@ -178,7 +178,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Protocol Node</p>
-                <p className="text-lg font-bold text-white">aime@aimeserge.dev</p>
+                <p className="text-lg font-bold text-white">aimeserge51260@gmail.com</p>
               </div>
             </div>
 
@@ -368,7 +368,7 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-[10px] font-mono text-slate-500 uppercase">
-                  <Briefcase className="h-3 w-3" /> Inquiry_Type
+                  <Briefcase className="h-3 w-3" /> Inquiry Type
                 </label>
                 <select
                   name="interest"
@@ -386,7 +386,7 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-[10px] font-mono text-slate-500 uppercase">
-                  <Linkedin className="h-3 w-3" /> Profile_Link
+                  <Linkedin className="h-3 w-3" /> Profile Link
                 </label>
                 <input
                   name="linkedinUrl"
@@ -447,11 +447,11 @@ export default function ContactPage() {
             >
               {isPending ? (
                 <span className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 animate-spin" /> ENCRYPTING_TRANSMISSION...
+                  <Clock className="h-4 w-4 animate-spin" /> ENCRYPTING TRANSMISSION...
                 </span>
               ) : (
                 <>
-                  TRANSMIT_INQUIRY
+                  TRANSMIT INQUIRY
                   <Send className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </>
               )}
