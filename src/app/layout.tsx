@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: "Advanced Full-Stack Portfolio focused on Cybersecurity, Cloud Infrastructure, and AI-Powered Solutions.",
   metadataBase: new URL('https://aimesergeonline.vercel.app'),
   icons: {
-    icon: "/logo.jpg",
-    shortcut: "/logo.jpg",
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
     apple: "/logo.jpeg",
   },
 };
